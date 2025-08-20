@@ -55,3 +55,32 @@ export interface LeaveDocument {
   fileSize: number;
   uploadedAt: Date;
 }
+
+export interface AbsenceRecord {
+  id: number;
+  employeeId: number;
+  absenceDate: Date;
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdBy: number;
+  createdAt: Date;
+  updatedAt: Date;
+  employeeName?: string;
+  createdByName?: string;
+}
+
+export interface AbsenceConversionRequest {
+  id: number;
+  absenceRecordId: number;
+  employeeId: number;
+  justification: string;
+  status: 'pending' | 'approved' | 'rejected';
+  managerComments?: string;
+  approvedBy?: number;
+  approvedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  employeeName?: string;
+  approverName?: string;
+  absenceDate?: Date;
+}

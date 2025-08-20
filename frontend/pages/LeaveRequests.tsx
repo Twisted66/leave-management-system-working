@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, X } from 'lucide-react';
+import { Check, X, Plus } from 'lucide-react';
 import backend from '~backend/client';
 import { useUser } from '../contexts/UserContext';
 import ApprovalDialog from '../components/ApprovalDialog';
+import AbsenceConversionApprovalDialog from '../components/AbsenceConversionApprovalDialog';
+import CreateAbsenceRecordDialog from '../components/CreateAbsenceRecordDialog';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function LeaveRequests() {
@@ -15,7 +17,10 @@ export default function LeaveRequests() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedConversionRequest, setSelectedConversionRequest] = useState<any>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [showConversionApprovalDialog, setShowConversionApprovalDialog] = useState(false);
+  const [showCreateAbsenceDialog, setShowCreateAbsenceDialog] = useState(false);
   const [approvalAction, setApprovalAction] = useState<'approved' | 'rejected'>('approved');
 
   const { data: pendingRequests } = useQuery({
@@ -44,6 +49,38 @@ export default function LeaveRequests() {
     enabled: !!currentUser && (currentUser.role === 'manager' || currentUser.role === 'hr'),
   });
 
+  const { data: pendingConversionRequests } = useQuery({
+    queryKey: ['pending-conversion-requests', currentUser?.id],
+    queryFn: () => {
+      if (currentUser?.role === 'manager') {
+        return backend.leave.listAbsenceConversionRequests({ managerId: currentUser.id, status: 'pending' });
+      } else if (currentUser?.role === 'hr') {
+        return backend.leave.listAbsenceConversionRequests({ status: 'pending' });
+      }
+      return null;
+    },
+    enabled: !!currentUser && (currentUser.role === 'manager' || currentUser.role === 'hr'),
+  });
+
+  const { data: allConversionRequests } = useQuery({
+    queryKey: ['all-conversion-requests', currentUser?.id],
+    queryFn: () => {
+      if (currentUser?.role === 'manager') {
+        return backend.leave.listAbsenceConversionRequests({ managerId: currentUser.id });
+      } else if (currentUser?.role === 'hr') {
+        return backend.leave.listAbsenceConversionRequests({});
+      }
+      return null;
+    },
+    enabled: !!currentUser && (currentUser.role === 'manager' || currentUser.role === 'hr'),
+  });
+
+  const { data: employees } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => backend.leave.listEmployees(),
+    enabled: currentUser?.role === 'hr',
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: backend.leave.updateLeaveRequestStatus,
     onSuccess: () => {
@@ -66,10 +103,58 @@ export default function LeaveRequests() {
     },
   });
 
+  const updateConversionStatusMutation = useMutation({
+    mutationFn: backend.leave.updateAbsenceConversionStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-conversion-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['all-conversion-requests'] });
+      setShowConversionApprovalDialog(false);
+      setSelectedConversionRequest(null);
+      toast({
+        title: 'Success',
+        description: `Absence conversion request ${approvalAction} successfully`,
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update absence conversion request:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update absence conversion request',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const createAbsenceRecordMutation = useMutation({
+    mutationFn: backend.leave.createAbsenceRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['absence-records'] });
+      setShowCreateAbsenceDialog(false);
+      toast({
+        title: 'Success',
+        description: 'Absence record created successfully',
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to create absence record:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create absence record',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleApproval = (request: any, action: 'approved' | 'rejected') => {
     setSelectedRequest(request);
     setApprovalAction(action);
     setShowApprovalDialog(true);
+  };
+
+  const handleConversionApproval = (request: any, action: 'approved' | 'rejected') => {
+    setSelectedConversionRequest(request);
+    setApprovalAction(action);
+    setShowConversionApprovalDialog(true);
   };
 
   const handleSubmitApproval = (comments: string) => {
@@ -77,6 +162,17 @@ export default function LeaveRequests() {
 
     updateStatusMutation.mutate({
       id: selectedRequest.id,
+      status: approvalAction,
+      managerComments: comments,
+      approvedBy: currentUser.id,
+    });
+  };
+
+  const handleSubmitConversionApproval = (comments: string) => {
+    if (!selectedConversionRequest || !currentUser) return;
+
+    updateConversionStatusMutation.mutate({
+      id: selectedConversionRequest.id,
       status: approvalAction,
       managerComments: comments,
       approvedBy: currentUser.id,
@@ -154,6 +250,61 @@ export default function LeaveRequests() {
     </div>
   );
 
+  const ConversionRequestCard = ({ request, showActions = false }: { request: any; showActions?: boolean }) => (
+    <div key={request.id} className="border dark:border-gray-600 rounded-lg p-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-medium text-gray-900 dark:text-white truncate">{request.employeeName}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Absence on {new Date(request.absenceDate).toLocaleDateString()}
+          </p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+            <strong>Justification:</strong> {request.justification}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {getStatusBadge(request.status)}
+          {showActions && request.status === 'pending' && (
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleConversionApproval(request, 'approved')}
+                className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleConversionApproval(request, 'rejected')}
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {request.managerComments && (
+        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded mt-2">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">Manager Comments:</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">{request.managerComments}</p>
+          {request.approverName && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              By {request.approverName} on {new Date(request.approvedAt!).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+      )}
+      
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        Submitted on {new Date(request.createdAt).toLocaleDateString()}
+      </p>
+    </div>
+  );
+
   if (currentUser?.role === 'employee') {
     return (
       <div className="text-center py-8">
@@ -164,28 +315,40 @@ export default function LeaveRequests() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Leave Requests</h1>
-        <p className="text-gray-600 dark:text-gray-400">Review and manage leave requests</p>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Leave Requests</h1>
+          <p className="text-gray-600 dark:text-gray-400">Review and manage leave requests</p>
+        </div>
+        {currentUser?.role === 'hr' && (
+          <Button onClick={() => setShowCreateAbsenceDialog(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Record Absence
+          </Button>
+        )}
       </div>
 
-      <Tabs defaultValue="pending" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="pending" className="text-sm">
-            Pending ({pendingRequests?.requests.length || 0})
+      <Tabs defaultValue="pending-leave" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="pending-leave" className="text-sm">
+            Pending Leave ({pendingRequests?.requests.length || 0})
           </TabsTrigger>
-          <TabsTrigger value="all" className="text-sm">All Requests</TabsTrigger>
+          <TabsTrigger value="pending-conversion" className="text-sm">
+            Pending Conversion ({pendingConversionRequests?.requests.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="all-leave" className="text-sm">All Leave</TabsTrigger>
+          <TabsTrigger value="all-conversion" className="text-sm">All Conversion</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending">
+        <TabsContent value="pending-leave">
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Pending Requests</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Pending Leave Requests</CardTitle>
             </CardHeader>
             <CardContent>
               {!pendingRequests?.requests.length ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">No pending requests</p>
+                  <p className="text-gray-500 dark:text-gray-400">No pending leave requests</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -198,20 +361,62 @@ export default function LeaveRequests() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="all">
+        <TabsContent value="pending-conversion">
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">All Requests</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Pending Absence Conversion Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!pendingConversionRequests?.requests.length ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400">No pending conversion requests</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingConversionRequests.requests.map((request) => (
+                    <ConversionRequestCard key={request.id} request={request} showActions={true} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="all-leave">
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-gray-900 dark:text-white">All Leave Requests</CardTitle>
             </CardHeader>
             <CardContent>
               {!allRequests?.requests.length ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">No requests found</p>
+                  <p className="text-gray-500 dark:text-gray-400">No leave requests found</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {allRequests.requests.map((request) => (
                     <RequestCard key={request.id} request={request} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="all-conversion">
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-gray-900 dark:text-white">All Absence Conversion Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!allConversionRequests?.requests.length ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400">No conversion requests found</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {allConversionRequests.requests.map((request) => (
+                    <ConversionRequestCard key={request.id} request={request} />
                   ))}
                 </div>
               )}
@@ -227,6 +432,23 @@ export default function LeaveRequests() {
         isLoading={updateStatusMutation.isPending}
         action={approvalAction}
         request={selectedRequest}
+      />
+
+      <AbsenceConversionApprovalDialog
+        open={showConversionApprovalDialog}
+        onOpenChange={setShowConversionApprovalDialog}
+        onSubmit={handleSubmitConversionApproval}
+        isLoading={updateConversionStatusMutation.isPending}
+        action={approvalAction}
+        request={selectedConversionRequest}
+      />
+
+      <CreateAbsenceRecordDialog
+        open={showCreateAbsenceDialog}
+        onOpenChange={setShowCreateAbsenceDialog}
+        onSubmit={(data) => createAbsenceRecordMutation.mutate(data)}
+        isLoading={createAbsenceRecordMutation.isPending}
+        employees={employees?.employees.filter(e => e.role !== 'hr') || []}
       />
     </div>
   );
