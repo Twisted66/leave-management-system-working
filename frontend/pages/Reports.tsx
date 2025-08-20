@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, BarChart3, Users, Calendar } from 'lucide-react';
 import backend from '~backend/client';
 import { useUser } from '../contexts/UserContext';
+import ProtectedRoute from '../components/ProtectedRoute';
 
-export default function Reports() {
+function ReportsContent() {
   const { currentUser } = useUser();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
@@ -70,14 +71,6 @@ export default function Reports() {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
-  if (currentUser?.role !== 'hr') {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400">You don't have permission to view this page.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -269,5 +262,13 @@ export default function Reports() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function Reports() {
+  return (
+    <ProtectedRoute requiredRole="hr">
+      <ReportsContent />
+    </ProtectedRoute>
   );
 }

@@ -18,6 +18,7 @@ export const listEmployees = api<void, ListEmployeesResponse>(
         department,
         role,
         manager_id as "managerId",
+        profile_image_url as "profileImageUrl",
         created_at as "createdAt"
       FROM employees
       ORDER BY name
@@ -42,6 +43,7 @@ export const getEmployee = api<GetEmployeeParams, Employee>(
         department,
         role,
         manager_id as "managerId",
+        profile_image_url as "profileImageUrl",
         created_at as "createdAt"
       FROM employees
       WHERE id = ${id}
@@ -75,6 +77,7 @@ export const createEmployee = api<CreateEmployeeRequest, Employee>(
         department,
         role,
         manager_id as "managerId",
+        profile_image_url as "profileImageUrl",
         created_at as "createdAt"
     `;
 
@@ -93,6 +96,67 @@ export const createEmployee = api<CreateEmployeeRequest, Employee>(
           lt.annual_allocation as allocated_days
         FROM leave_types lt
       `;
+    }
+
+    return employee;
+  }
+);
+
+interface UpdateEmployeeProfileRequest {
+  id: number;
+  name?: string;
+  department?: string;
+  profileImageUrl?: string;
+}
+
+// Updates an employee's profile information.
+export const updateEmployeeProfile = api<UpdateEmployeeProfileRequest, Employee>(
+  { expose: true, method: "PUT", path: "/employees/:id/profile" },
+  async (req) => {
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+    let paramIndex = 1;
+
+    if (req.name !== undefined) {
+      updateFields.push(`name = $${paramIndex++}`);
+      updateValues.push(req.name);
+    }
+
+    if (req.department !== undefined) {
+      updateFields.push(`department = $${paramIndex++}`);
+      updateValues.push(req.department);
+    }
+
+    if (req.profileImageUrl !== undefined) {
+      updateFields.push(`profile_image_url = $${paramIndex++}`);
+      updateValues.push(req.profileImageUrl);
+    }
+
+    if (updateFields.length === 0) {
+      throw new Error("No fields to update");
+    }
+
+    updateValues.push(req.id);
+
+    const query = `
+      UPDATE employees 
+      SET ${updateFields.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING 
+        id,
+        email,
+        name,
+        department,
+        role,
+        manager_id as "managerId",
+        profile_image_url as "profileImageUrl",
+        created_at as "createdAt"
+    `;
+
+    const employee = await leaveDB.rawQueryRow<Employee>(query, ...updateValues);
+
+    if (!employee) {
+      throw new Error("Employee not found");
     }
 
     return employee;

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import backend from '~backend/client';
+import { createContext, useContext, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 import type { Employee } from '~backend/leave/types';
 
 interface UserContextType {
@@ -11,28 +11,12 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<Employee | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentUser, isLoading } = useAuth();
 
-  useEffect(() => {
-    // For demo purposes, we'll simulate a logged-in user
-    // In a real app, this would come from authentication
-    const loadUser = async () => {
-      try {
-        // Simulate loading the first employee as the current user
-        const { employees } = await backend.leave.listEmployees();
-        if (employees.length > 0) {
-          setCurrentUser(employees[3]); // Alice Employee
-        }
-      } catch (error) {
-        console.error('Failed to load user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUser();
-  }, []);
+  const setCurrentUser = (user: Employee | null) => {
+    // This is now handled by the AuthContext
+    console.warn('setCurrentUser is deprecated, use login/logout from AuthContext instead');
+  };
 
   return (
     <UserContext.Provider value={{ currentUser, setCurrentUser, isLoading }}>

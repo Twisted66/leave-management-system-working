@@ -10,11 +10,14 @@ import {
   User,
   Settings,
   Sun,
-  Moon
+  Moon,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface LayoutProps {
@@ -33,6 +36,7 @@ const navigation = [
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { currentUser } = useUser();
+  const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const filteredNavigation = navigation.filter(item => {
@@ -47,6 +51,15 @@ export default function Layout({ children }: LayoutProps) {
     }
     return true;
   });
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const NavItems = () => (
     <>
@@ -96,11 +109,24 @@ export default function Layout({ children }: LayoutProps) {
               </li>
               <li className="mt-auto">
                 <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm">
-                  <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarImage src={currentUser?.profileImageUrl} />
+                    <AvatarFallback className="bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100">
+                      {currentUser?.name ? getInitials(currentUser.name) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-900 dark:text-white truncate">{currentUser?.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 capitalize truncate">{currentUser?.role}</p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={logout}
+                    className="flex-shrink-0"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
                 </div>
               </li>
             </ul>
@@ -146,11 +172,24 @@ export default function Layout({ children }: LayoutProps) {
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             <div className="flex items-center gap-3">
-              <User className="h-5 w-5 text-gray-400 flex-shrink-0" />
+              <Avatar className="h-8 w-8 flex-shrink-0">
+                <AvatarImage src={currentUser?.profileImageUrl} />
+                <AvatarFallback className="bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100">
+                  {currentUser?.name ? getInitials(currentUser.name) : 'U'}
+                </AvatarFallback>
+              </Avatar>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{currentUser?.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 capitalize truncate">{currentUser?.role}</p>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="flex-shrink-0"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>

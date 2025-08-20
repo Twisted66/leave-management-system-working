@@ -5,6 +5,7 @@ export interface Employee {
   department: string;
   role: 'employee' | 'manager' | 'hr';
   managerId?: number;
+  profileImageUrl?: string;
   createdAt: Date;
 }
 

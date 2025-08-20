@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { User, Bell, Shield, Palette, Save } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, Bell, Shield, Palette, Save, Camera, Upload } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -33,19 +34,72 @@ export default function Settings() {
     weeklyReports: false,
   });
 
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   const { data: employees } = useQuery({
     queryKey: ['employees'],
     queryFn: () => backend.leave.listEmployees(),
     enabled: currentUser?.role === 'hr',
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: backend.leave.updateEmployeeProfile,
+    onSuccess: (updatedEmployee) => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      // Update the current user in the auth context would be ideal here
+      toast({
+        title: 'Success',
+        description: 'Profile updated successfully',
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: backend.storage.uploadProfileImage,
+    onSuccess: async (response) => {
+      if (currentUser) {
+        await updateProfileMutation.mutateAsync({
+          id: currentUser.id,
+          profileImageUrl: response.imageUrl,
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('Failed to upload image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload image',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const departments = [...new Set(employees?.employees.map(e => e.department) || [])];
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const handleSaveProfile = () => {
-    // In a real app, this would call an API to update the user profile
-    toast({
-      title: 'Success',
-      description: 'Profile updated successfully',
+    if (!currentUser) return;
+
+    updateProfileMutation.mutate({
+      id: currentUser.id,
+      name: profileData.name,
+      department: profileData.department,
     });
   };
 
@@ -55,6 +109,53 @@ export default function Settings() {
       title: 'Success',
       description: 'Notification preferences updated',
     });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Please select a valid image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'Image size must be less than 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Data = reader.result as string;
+        const base64String = base64Data.split(',')[1]; // Remove data:image/...;base64, prefix
+
+        await uploadImageMutation.mutateAsync({
+          employeeId: currentUser.id,
+          filename: file.name,
+          fileData: base64String,
+        });
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   return (
@@ -89,7 +190,50 @@ export default function Settings() {
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Profile Image Section */}
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="relative">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={currentUser?.profileImageUrl} />
+                    <AvatarFallback className="bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100 text-xl">
+                      {currentUser?.name ? getInitials(currentUser.name) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-2 -right-2">
+                    <label htmlFor="profile-image" className="cursor-pointer">
+                      <div className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2 shadow-lg transition-colors">
+                        <Camera className="h-4 w-4" />
+                      </div>
+                      <input
+                        id="profile-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={isUploadingImage}
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div className="text-center sm:text-left">
+                  <h3 className="font-medium text-gray-900 dark:text-white">Profile Picture</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Click the camera icon to upload a new profile picture
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    JPG, PNG, GIF up to 5MB
+                  </p>
+                  {isUploadingImage && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                      Uploading...
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="name">Full Name</Label>
@@ -106,7 +250,12 @@ export default function Settings() {
                     type="email"
                     value={profileData.email}
                     onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                    disabled
+                    className="bg-gray-50 dark:bg-gray-700"
                   />
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    Email cannot be changed
+                  </p>
                 </div>
               </div>
 
@@ -137,9 +286,13 @@ export default function Settings() {
                 </p>
               </div>
 
-              <Button onClick={handleSaveProfile} className="w-full sm:w-auto">
+              <Button 
+                onClick={handleSaveProfile} 
+                className="w-full sm:w-auto"
+                disabled={updateProfileMutation.isPending}
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Save Profile
+                {updateProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
               </Button>
             </CardContent>
           </Card>
