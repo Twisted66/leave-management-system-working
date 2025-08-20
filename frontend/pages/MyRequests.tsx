@@ -56,43 +56,43 @@ export default function MyRequests() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Approved</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Rejected</Badge>;
       default:
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pending</Badge>;
     }
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="text-gray-900 dark:text-white">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Leave Requests</h1>
-          <p className="text-gray-600">View and manage your leave requests</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Leave Requests</h1>
+          <p className="text-gray-600 dark:text-gray-400">View and manage your leave requests</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button onClick={() => setShowCreateDialog(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           New Request
         </Button>
       </div>
 
       {/* Leave Balances Summary */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>Leave Balances</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-white">Leave Balances</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {balances?.balances.map((balance) => (
-              <div key={balance.id} className="text-center p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-gray-900">{balance.leaveTypeName}</h3>
-                <p className="text-2xl font-bold text-blue-600">{balance.availableDays}</p>
-                <p className="text-sm text-gray-500">
+              <div key={balance.id} className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 className="font-medium text-gray-900 dark:text-white truncate">{balance.leaveTypeName}</h3>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{balance.availableDays}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {balance.usedDays} used / {balance.allocatedDays} allocated
                 </p>
               </div>
@@ -102,14 +102,14 @@ export default function MyRequests() {
       </Card>
 
       {/* Requests List */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>Request History</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-white">Request History</CardTitle>
         </CardHeader>
         <CardContent>
           {!requests?.requests.length ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">No leave requests found</p>
+              <p className="text-gray-500 dark:text-gray-400">No leave requests found</p>
               <Button 
                 onClick={() => setShowCreateDialog(true)}
                 className="mt-4"
@@ -121,37 +121,39 @@ export default function MyRequests() {
           ) : (
             <div className="space-y-4">
               {requests.requests.map((request) => (
-                <div key={request.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-medium">{request.leaveTypeName}</h3>
-                      <p className="text-sm text-gray-600">
+                <div key={request.id} className="border dark:border-gray-600 rounded-lg p-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-gray-900 dark:text-white truncate">{request.leaveTypeName}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {new Date(request.startDate).toLocaleDateString()} - {new Date(request.endDate).toLocaleDateString()}
                       </p>
-                      <p className="text-sm text-gray-600">{request.daysRequested} days</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{request.daysRequested} days</p>
                     </div>
-                    {getStatusBadge(request.status)}
+                    <div className="flex-shrink-0">
+                      {getStatusBadge(request.status)}
+                    </div>
                   </div>
                   
                   {request.reason && (
-                    <p className="text-sm text-gray-700 mb-2">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                       <strong>Reason:</strong> {request.reason}
                     </p>
                   )}
                   
                   {request.managerComments && (
-                    <div className="bg-gray-50 p-3 rounded mt-2">
-                      <p className="text-sm font-medium text-gray-900">Manager Comments:</p>
-                      <p className="text-sm text-gray-700">{request.managerComments}</p>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded mt-2">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Manager Comments:</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{request.managerComments}</p>
                       {request.approverName && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           By {request.approverName} on {new Date(request.approvedAt!).toLocaleDateString()}
                         </p>
                       )}
                     </div>
                   )}
                   
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Submitted on {new Date(request.createdAt).toLocaleDateString()}
                   </p>
                 </div>

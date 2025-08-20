@@ -7,28 +7,33 @@ import LeaveRequests from './pages/LeaveRequests';
 import MyRequests from './pages/MyRequests';
 import Reports from './pages/Reports';
 import Employees from './pages/Employees';
+import Settings from './pages/Settings';
 import { UserProvider } from './contexts/UserContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <Router>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/leave-requests" element={<LeaveRequests />} />
-              <Route path="/my-requests" element={<MyRequests />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/employees" element={<Employees />} />
-            </Routes>
-          </Layout>
-        </Router>
-        <Toaster />
-      </UserProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <UserProvider>
+          <Router>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/leave-requests" element={<LeaveRequests />} />
+                <Route path="/my-requests" element={<MyRequests />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/employees" element={<Employees />} />
+                <Route path="/settings" element={<Settings />} />
+              </Routes>
+            </Layout>
+          </Router>
+          <Toaster />
+        </UserProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

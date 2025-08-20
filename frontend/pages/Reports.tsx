@@ -74,33 +74,33 @@ export default function Reports() {
   if (currentUser?.role !== 'hr') {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">You don't have permission to view this page.</p>
+        <p className="text-gray-500 dark:text-gray-400">You don't have permission to view this page.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-          <p className="text-gray-600">Leave usage analytics and insights</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
+          <p className="text-gray-600 dark:text-gray-400">Leave usage analytics and insights</p>
         </div>
-        <Button onClick={exportToCSV} variant="outline">
+        <Button onClick={exportToCSV} variant="outline" className="w-full sm:w-auto">
           <Download className="h-4 w-4 mr-2" />
           Export CSV
         </Button>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-white">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger>
                   <SelectValue />
@@ -112,8 +112,8 @@ export default function Reports() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
               <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
                 <SelectTrigger>
                   <SelectValue placeholder="All departments" />
@@ -131,56 +131,56 @@ export default function Reports() {
       </Card>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="department">By Department</TabsTrigger>
-          <TabsTrigger value="employee">By Employee</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="department" className="text-sm">By Department</TabsTrigger>
+          <TabsTrigger value="employee" className="text-sm">By Employee</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Total Employees</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {employees?.employees.filter(e => e.role !== 'hr').length || 0}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Pending Requests</CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{pendingSummary?.totalPending || 0}</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{pendingSummary?.totalPending || 0}</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Utilization</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Avg Utilization</CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {leaveUsageReport?.departmentSummaries.length ? 
                     Math.round(leaveUsageReport.departmentSummaries.reduce((acc, dept) => acc + dept.averageUtilization, 0) / leaveUsageReport.departmentSummaries.length) : 0}%
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Days Used</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Total Days Used</CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {leaveUsageReport?.departmentSummaries.reduce((acc, dept) => acc + dept.totalUsedDays, 0) || 0}
                 </div>
               </CardContent>
@@ -189,33 +189,33 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="department">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>Department Summary</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Department Summary</CardTitle>
             </CardHeader>
             <CardContent>
               {!leaveUsageReport?.departmentSummaries.length ? (
-                <p className="text-gray-500 text-center py-4">No data available</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">No data available</p>
               ) : (
                 <div className="space-y-4">
                   {leaveUsageReport.departmentSummaries.map((dept) => (
-                    <div key={dept.department} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium">{dept.department}</h3>
-                        <span className="text-sm text-gray-500">{dept.totalEmployees} employees</span>
+                    <div key={dept.department} className="border dark:border-gray-600 rounded-lg p-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                        <h3 className="font-medium text-gray-900 dark:text-white truncate">{dept.department}</h3>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{dept.totalEmployees} employees</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-sm">
                         <div>
-                          <p className="text-gray-600">Allocated Days</p>
-                          <p className="font-medium">{dept.totalAllocatedDays}</p>
+                          <p className="text-gray-600 dark:text-gray-400">Allocated Days</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{dept.totalAllocatedDays}</p>
                         </div>
                         <div>
-                          <p className="text-gray-600">Used Days</p>
-                          <p className="font-medium">{dept.totalUsedDays}</p>
+                          <p className="text-gray-600 dark:text-gray-400">Used Days</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{dept.totalUsedDays}</p>
                         </div>
                         <div>
-                          <p className="text-gray-600">Utilization</p>
-                          <p className="font-medium">{dept.averageUtilization}%</p>
+                          <p className="text-gray-600 dark:text-gray-400">Utilization</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{dept.averageUtilization}%</p>
                         </div>
                       </div>
                     </div>
@@ -227,37 +227,37 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="employee">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>Employee Details</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Employee Details</CardTitle>
             </CardHeader>
             <CardContent>
               {!leaveUsageReport?.employeeReports.length ? (
-                <p className="text-gray-500 text-center py-4">No data available</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">No data available</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">Employee</th>
-                        <th className="text-left p-2">Department</th>
-                        <th className="text-left p-2">Leave Type</th>
-                        <th className="text-right p-2">Allocated</th>
-                        <th className="text-right p-2">Used</th>
-                        <th className="text-right p-2">Available</th>
-                        <th className="text-right p-2">Utilization</th>
+                      <tr className="border-b dark:border-gray-600">
+                        <th className="text-left p-2 text-gray-900 dark:text-white">Employee</th>
+                        <th className="text-left p-2 text-gray-900 dark:text-white">Department</th>
+                        <th className="text-left p-2 text-gray-900 dark:text-white">Leave Type</th>
+                        <th className="text-right p-2 text-gray-900 dark:text-white">Allocated</th>
+                        <th className="text-right p-2 text-gray-900 dark:text-white">Used</th>
+                        <th className="text-right p-2 text-gray-900 dark:text-white">Available</th>
+                        <th className="text-right p-2 text-gray-900 dark:text-white">Utilization</th>
                       </tr>
                     </thead>
                     <tbody>
                       {leaveUsageReport.employeeReports.map((report, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="p-2">{report.employeeName}</td>
-                          <td className="p-2">{report.department}</td>
-                          <td className="p-2">{report.leaveTypeName}</td>
-                          <td className="p-2 text-right">{report.allocatedDays}</td>
-                          <td className="p-2 text-right">{report.usedDays}</td>
-                          <td className="p-2 text-right">{report.availableDays}</td>
-                          <td className="p-2 text-right">{report.utilizationPercentage}%</td>
+                        <tr key={index} className="border-b dark:border-gray-600">
+                          <td className="p-2 text-gray-900 dark:text-white">{report.employeeName}</td>
+                          <td className="p-2 text-gray-600 dark:text-gray-400">{report.department}</td>
+                          <td className="p-2 text-gray-600 dark:text-gray-400">{report.leaveTypeName}</td>
+                          <td className="p-2 text-right text-gray-900 dark:text-white">{report.allocatedDays}</td>
+                          <td className="p-2 text-right text-gray-900 dark:text-white">{report.usedDays}</td>
+                          <td className="p-2 text-right text-gray-900 dark:text-white">{report.availableDays}</td>
+                          <td className="p-2 text-right text-gray-900 dark:text-white">{report.utilizationPercentage}%</td>
                         </tr>
                       ))}
                     </tbody>

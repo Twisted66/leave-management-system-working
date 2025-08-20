@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Upload } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { LeaveType, LeaveBalance, Employee } from '~backend/leave/types';
@@ -103,22 +103,22 @@ export default function CreateLeaveRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] dark:bg-gray-800 dark:border-gray-700">
         <DialogHeader>
-          <DialogTitle>Submit Leave Request</DialogTitle>
+          <DialogTitle className="text-gray-900 dark:text-white">Submit Leave Request</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="leaveType">Leave Type</Label>
+            <Label htmlFor="leaveType" className="text-gray-900 dark:text-white">Leave Type</Label>
             <Select value={formData.leaveTypeId} onValueChange={(value) => setFormData(prev => ({ ...prev, leaveTypeId: value }))}>
-              <SelectTrigger>
+              <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <SelectValue placeholder="Select leave type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
                 {leaveTypes.map((type) => {
                   const balance = balances.find(b => b.leaveTypeId === type.id);
                   return (
-                    <SelectItem key={type.id} value={type.id.toString()}>
+                    <SelectItem key={type.id} value={type.id.toString()} className="dark:text-white">
                       {type.name} ({balance?.availableDays || 0} days available)
                     </SelectItem>
                   );
@@ -127,15 +127,15 @@ export default function CreateLeaveRequestDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label>Start Date</Label>
+              <Label className="text-gray-900 dark:text-white">Start Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal dark:bg-gray-700 dark:border-gray-600 dark:text-white",
                       !formData.startDate && "text-muted-foreground"
                     )}
                   >
@@ -143,26 +143,27 @@ export default function CreateLeaveRequestDialog({
                     {formData.startDate ? format(formData.startDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0 dark:bg-gray-700 dark:border-gray-600">
                   <Calendar
                     mode="single"
                     selected={formData.startDate}
                     onSelect={(date) => setFormData(prev => ({ ...prev, startDate: date }))}
                     disabled={(date) => date < new Date()}
                     initialFocus
+                    className="dark:bg-gray-700"
                   />
                 </PopoverContent>
               </Popover>
             </div>
 
             <div>
-              <Label>End Date</Label>
+              <Label className="text-gray-900 dark:text-white">End Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal dark:bg-gray-700 dark:border-gray-600 dark:text-white",
                       !formData.endDate && "text-muted-foreground"
                     )}
                   >
@@ -170,13 +171,14 @@ export default function CreateLeaveRequestDialog({
                     {formData.endDate ? format(formData.endDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0 dark:bg-gray-700 dark:border-gray-600">
                   <Calendar
                     mode="single"
                     selected={formData.endDate}
                     onSelect={(date) => setFormData(prev => ({ ...prev, endDate: date }))}
                     disabled={(date) => date < (formData.startDate || new Date())}
                     initialFocus
+                    className="dark:bg-gray-700"
                   />
                 </PopoverContent>
               </Popover>
@@ -186,7 +188,9 @@ export default function CreateLeaveRequestDialog({
           {daysRequested > 0 && (
             <div className={cn(
               "p-3 rounded-lg text-sm",
-              hasInsufficientBalance ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"
+              hasInsufficientBalance 
+                ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300" 
+                : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
             )}>
               <p>
                 <strong>Days requested:</strong> {daysRequested} business days
@@ -203,41 +207,43 @@ export default function CreateLeaveRequestDialog({
           )}
 
           <div>
-            <Label htmlFor="reason">Reason (Optional)</Label>
+            <Label htmlFor="reason" className="text-gray-900 dark:text-white">Reason (Optional)</Label>
             <Textarea
               id="reason"
               value={formData.reason}
               onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
               placeholder="Provide a reason for your leave request..."
               rows={3}
+              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
 
           <div>
-            <Label htmlFor="document">Supporting Document (Optional)</Label>
+            <Label htmlFor="document" className="text-gray-900 dark:text-white">Supporting Document (Optional)</Label>
             <div className="mt-1">
               <Input
                 id="document"
                 type="file"
                 onChange={handleFileChange}
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
               {selectedFile && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Selected: {selectedFile.name}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={isLoading || !formData.leaveTypeId || !formData.startDate || !formData.endDate || hasInsufficientBalance}
+              className="w-full sm:w-auto"
             >
               {isLoading ? 'Submitting...' : 'Submit Request'}
             </Button>

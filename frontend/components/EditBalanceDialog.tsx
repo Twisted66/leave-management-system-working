@@ -81,28 +81,28 @@ export default function EditBalanceDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] dark:bg-gray-800 dark:border-gray-700">
         <DialogHeader>
-          <DialogTitle>Edit Leave Balance</DialogTitle>
+          <DialogTitle className="text-gray-900 dark:text-white">Edit Leave Balance</DialogTitle>
         </DialogHeader>
 
         {employee && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-4">
-            <h3 className="font-medium">{employee.name}</h3>
-            <p className="text-sm text-gray-600">{employee.department}</p>
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
+            <h3 className="font-medium text-gray-900 dark:text-white">{employee.name}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{employee.department}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="leaveType">Leave Type</Label>
+            <Label htmlFor="leaveType" className="text-gray-900 dark:text-white">Leave Type</Label>
             <Select value={formData.leaveTypeId} onValueChange={(value) => setFormData(prev => ({ ...prev, leaveTypeId: value }))}>
-              <SelectTrigger>
+              <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <SelectValue placeholder="Select leave type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
                 {leaveTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id.toString()}>
+                  <SelectItem key={type.id} value={type.id.toString()} className="dark:text-white">
                     {type.name}
                   </SelectItem>
                 ))}
@@ -111,17 +111,17 @@ export default function EditBalanceDialog({
           </div>
 
           {selectedBalance && (
-            <div className="bg-blue-50 p-3 rounded-lg text-sm">
-              <p><strong>Current Balance:</strong></p>
-              <p>Allocated: {selectedBalance.allocatedDays} days</p>
-              <p>Used: {selectedBalance.usedDays} days</p>
-              <p>Carried Forward: {selectedBalance.carriedForwardDays} days</p>
-              <p>Available: {selectedBalance.availableDays} days</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-sm">
+              <p className="text-gray-900 dark:text-white"><strong>Current Balance:</strong></p>
+              <p className="text-gray-700 dark:text-gray-300">Allocated: {selectedBalance.allocatedDays} days</p>
+              <p className="text-gray-700 dark:text-gray-300">Used: {selectedBalance.usedDays} days</p>
+              <p className="text-gray-700 dark:text-gray-300">Carried Forward: {selectedBalance.carriedForwardDays} days</p>
+              <p className="text-gray-700 dark:text-gray-300">Available: {selectedBalance.availableDays} days</p>
             </div>
           )}
 
           <div>
-            <Label htmlFor="allocatedDays">Allocated Days</Label>
+            <Label htmlFor="allocatedDays" className="text-gray-900 dark:text-white">Allocated Days</Label>
             <Input
               id="allocatedDays"
               type="number"
@@ -129,11 +129,12 @@ export default function EditBalanceDialog({
               value={formData.allocatedDays}
               onChange={(e) => setFormData(prev => ({ ...prev, allocatedDays: e.target.value }))}
               required
+              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
 
           <div>
-            <Label htmlFor="carriedForwardDays">Carried Forward Days</Label>
+            <Label htmlFor="carriedForwardDays" className="text-gray-900 dark:text-white">Carried Forward Days</Label>
             <Input
               id="carriedForwardDays"
               type="number"
@@ -141,14 +142,15 @@ export default function EditBalanceDialog({
               value={formData.carriedForwardDays}
               onChange={(e) => setFormData(prev => ({ ...prev, carriedForwardDays: e.target.value }))}
               required
+              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || !formData.leaveTypeId}>
+            <Button type="submit" disabled={isLoading || !formData.leaveTypeId} className="w-full sm:w-auto">
               {isLoading ? 'Updating...' : 'Update Balance'}
             </Button>
           </div>

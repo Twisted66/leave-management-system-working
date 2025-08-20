@@ -59,75 +59,77 @@ export default function CreateEmployeeDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] dark:bg-gray-800 dark:border-gray-700">
         <DialogHeader>
-          <DialogTitle>Add New Employee</DialogTitle>
+          <DialogTitle className="text-gray-900 dark:text-white">Add New Employee</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="name" className="text-gray-900 dark:text-white">Full Name</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               required
+              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
 
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-gray-900 dark:text-white">Email</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               required
+              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
 
           <div>
-            <Label htmlFor="department">Department</Label>
+            <Label htmlFor="department" className="text-gray-900 dark:text-white">Department</Label>
             <Select value={formData.department} onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}>
-              <SelectTrigger>
+              <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <SelectValue placeholder="Select or enter department" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
                 {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  <SelectItem key={dept} value={dept} className="dark:text-white">{dept}</SelectItem>
                 ))}
-                <SelectItem value="Engineering">Engineering</SelectItem>
-                <SelectItem value="Marketing">Marketing</SelectItem>
-                <SelectItem value="Sales">Sales</SelectItem>
-                <SelectItem value="Finance">Finance</SelectItem>
-                <SelectItem value="Operations">Operations</SelectItem>
+                <SelectItem value="Engineering" className="dark:text-white">Engineering</SelectItem>
+                <SelectItem value="Marketing" className="dark:text-white">Marketing</SelectItem>
+                <SelectItem value="Sales" className="dark:text-white">Sales</SelectItem>
+                <SelectItem value="Finance" className="dark:text-white">Finance</SelectItem>
+                <SelectItem value="Operations" className="dark:text-white">Operations</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="role">Role</Label>
+            <Label htmlFor="role" className="text-gray-900 dark:text-white">Role</Label>
             <Select value={formData.role} onValueChange={(value: any) => setFormData(prev => ({ ...prev, role: value }))}>
-              <SelectTrigger>
+              <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="employee">Employee</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="hr">HR</SelectItem>
+              <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
+                <SelectItem value="employee" className="dark:text-white">Employee</SelectItem>
+                <SelectItem value="manager" className="dark:text-white">Manager</SelectItem>
+                <SelectItem value="hr" className="dark:text-white">HR</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {formData.role === 'employee' && (
             <div>
-              <Label htmlFor="manager">Manager</Label>
+              <Label htmlFor="manager" className="text-gray-900 dark:text-white">Manager</Label>
               <Select value={formData.managerId} onValueChange={(value) => setFormData(prev => ({ ...prev, managerId: value }))}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                   <SelectValue placeholder="Select manager" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
                   {managers.map((manager) => (
-                    <SelectItem key={manager.id} value={manager.id.toString()}>
+                    <SelectItem key={manager.id} value={manager.id.toString()} className="dark:text-white">
                       {manager.name}
                     </SelectItem>
                   ))}
@@ -136,11 +138,11 @@ export default function CreateEmployeeDialog({
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
               {isLoading ? 'Creating...' : 'Create Employee'}
             </Button>
           </div>

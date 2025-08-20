@@ -42,9 +42,9 @@ export default function ApprovalDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] dark:bg-gray-800 dark:border-gray-700">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
             {action === 'approved' ? (
               <Check className="h-5 w-5 text-green-600" />
             ) : (
@@ -55,15 +55,15 @@ export default function ApprovalDialog({
         </DialogHeader>
 
         {request && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-4">
-            <h3 className="font-medium">{request.employeeName}</h3>
-            <p className="text-sm text-gray-600">{request.leaveTypeName}</p>
-            <p className="text-sm text-gray-600">
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
+            <h3 className="font-medium text-gray-900 dark:text-white">{request.employeeName}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{request.leaveTypeName}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {new Date(request.startDate).toLocaleDateString()} - {new Date(request.endDate).toLocaleDateString()}
             </p>
-            <p className="text-sm text-gray-600">{request.daysRequested} days</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{request.daysRequested} days</p>
             {request.reason && (
-              <p className="text-sm text-gray-700 mt-2">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
                 <strong>Reason:</strong> {request.reason}
               </p>
             )}
@@ -72,7 +72,7 @@ export default function ApprovalDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="comments">
+            <Label htmlFor="comments" className="text-gray-900 dark:text-white">
               Comments {action === 'rejected' ? '(Required)' : '(Optional)'}
             </Label>
             <Textarea
@@ -86,17 +86,18 @@ export default function ApprovalDialog({
               }
               rows={4}
               required={action === 'rejected'}
+              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={isLoading || (action === 'rejected' && !comments.trim())}
-              className={action === 'approved' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+              className={`w-full sm:w-auto ${action === 'approved' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
             >
               {isLoading ? 'Processing...' : action === 'approved' ? 'Approve' : 'Reject'}
             </Button>

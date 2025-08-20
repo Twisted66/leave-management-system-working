@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, X, MessageSquare } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import backend from '~backend/client';
 import { useUser } from '../contexts/UserContext';
 import ApprovalDialog from '../components/ApprovalDialog';
@@ -86,26 +86,26 @@ export default function LeaveRequests() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Approved</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Rejected</Badge>;
       default:
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pending</Badge>;
     }
   };
 
   const RequestCard = ({ request, showActions = false }: { request: any; showActions?: boolean }) => (
-    <div key={request.id} className="border rounded-lg p-4">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h3 className="font-medium">{request.employeeName}</h3>
-          <p className="text-sm text-gray-600">{request.leaveTypeName}</p>
-          <p className="text-sm text-gray-600">
+    <div key={request.id} className="border dark:border-gray-600 rounded-lg p-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-medium text-gray-900 dark:text-white truncate">{request.employeeName}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{request.leaveTypeName}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {new Date(request.startDate).toLocaleDateString()} - {new Date(request.endDate).toLocaleDateString()}
           </p>
-          <p className="text-sm text-gray-600">{request.daysRequested} days</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{request.daysRequested} days</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {getStatusBadge(request.status)}
           {showActions && request.status === 'pending' && (
             <div className="flex gap-1">
@@ -113,7 +113,7 @@ export default function LeaveRequests() {
                 size="sm"
                 variant="outline"
                 onClick={() => handleApproval(request, 'approved')}
-                className="text-green-600 hover:text-green-700"
+                className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
               >
                 <Check className="h-4 w-4" />
               </Button>
@@ -121,7 +121,7 @@ export default function LeaveRequests() {
                 size="sm"
                 variant="outline"
                 onClick={() => handleApproval(request, 'rejected')}
-                className="text-red-600 hover:text-red-700"
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -131,24 +131,24 @@ export default function LeaveRequests() {
       </div>
       
       {request.reason && (
-        <p className="text-sm text-gray-700 mb-2">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
           <strong>Reason:</strong> {request.reason}
         </p>
       )}
       
       {request.managerComments && (
-        <div className="bg-gray-50 p-3 rounded mt-2">
-          <p className="text-sm font-medium text-gray-900">Manager Comments:</p>
-          <p className="text-sm text-gray-700">{request.managerComments}</p>
+        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded mt-2">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">Manager Comments:</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">{request.managerComments}</p>
           {request.approverName && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               By {request.approverName} on {new Date(request.approvedAt!).toLocaleDateString()}
             </p>
           )}
         </div>
       )}
       
-      <p className="text-xs text-gray-500 mt-2">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
         Submitted on {new Date(request.createdAt).toLocaleDateString()}
       </p>
     </div>
@@ -157,7 +157,7 @@ export default function LeaveRequests() {
   if (currentUser?.role === 'employee') {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">You don't have permission to view this page.</p>
+        <p className="text-gray-500 dark:text-gray-400">You don't have permission to view this page.</p>
       </div>
     );
   }
@@ -165,27 +165,27 @@ export default function LeaveRequests() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Leave Requests</h1>
-        <p className="text-gray-600">Review and manage leave requests</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Leave Requests</h1>
+        <p className="text-gray-600 dark:text-gray-400">Review and manage leave requests</p>
       </div>
 
       <Tabs defaultValue="pending" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="pending">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="pending" className="text-sm">
             Pending ({pendingRequests?.requests.length || 0})
           </TabsTrigger>
-          <TabsTrigger value="all">All Requests</TabsTrigger>
+          <TabsTrigger value="all" className="text-sm">All Requests</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>Pending Requests</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">Pending Requests</CardTitle>
             </CardHeader>
             <CardContent>
               {!pendingRequests?.requests.length ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No pending requests</p>
+                  <p className="text-gray-500 dark:text-gray-400">No pending requests</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -199,14 +199,14 @@ export default function LeaveRequests() {
         </TabsContent>
 
         <TabsContent value="all">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>All Requests</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-white">All Requests</CardTitle>
             </CardHeader>
             <CardContent>
               {!allRequests?.requests.length ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No requests found</p>
+                  <p className="text-gray-500 dark:text-gray-400">No requests found</p>
                 </div>
               ) : (
                 <div className="space-y-4">
