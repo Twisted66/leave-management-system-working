@@ -7,6 +7,7 @@ import LeaveRequests from './pages/LeaveRequests';
 import MyRequests from './pages/MyRequests';
 import Reports from './pages/Reports';
 import Employees from './pages/Employees';
+import Documents from './pages/Documents';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -53,6 +54,13 @@ function AppRoutes() {
         <ProtectedRoute>
           <Layout>
             <Employees />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/documents" element={
+        <ProtectedRoute>
+          <Layout>
+            <Documents />
           </Layout>
         </ProtectedRoute>
       } />

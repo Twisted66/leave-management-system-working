@@ -58,19 +58,3 @@ INSERT INTO leave_types (name, annual_allocation, carry_forward_limit) VALUES
 ('Sick Leave', 10, 0),
 ('Personal Leave', 5, 0),
 ('Maternity/Paternity Leave', 90, 0);
-
--- Insert sample employees
-INSERT INTO employees (email, name, department, role) VALUES
-('hr@company.com', 'HR Admin', 'Human Resources', 'hr'),
-('manager1@company.com', 'John Manager', 'Engineering', 'manager'),
-('manager2@company.com', 'Sarah Manager', 'Marketing', 'manager'),
-('employee1@company.com', 'Alice Employee', 'Engineering', 'employee'),
-('employee2@company.com', 'Bob Employee', 'Engineering', 'employee'),
-('employee3@company.com', 'Carol Employee', 'Marketing', 'employee');
-
--- Set manager relationships
-UPDATE employees SET manager_id = (SELECT id FROM employees WHERE email = 'manager1@company.com') 
-WHERE email IN ('employee1@company.com', 'employee2@company.com');
-
-UPDATE employees SET manager_id = (SELECT id FROM employees WHERE email = 'manager2@company.com') 
-WHERE email = 'employee3@company.com';

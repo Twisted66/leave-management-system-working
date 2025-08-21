@@ -1,4 +1,4 @@
-import { api, APIError, Header, Cookie } from "encore.dev/api";
+import { api, APIError, Header, Cookie, Gateway } from "encore.dev/api";
 import { authHandler } from "encore.dev/auth";
 import { secret } from "encore.dev/config";
 import { leaveDB } from "./db";
@@ -58,16 +58,16 @@ export const login = api<LoginRequest, LoginResponse>(
       throw APIError.unauthenticated("Invalid email or password");
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: employee.id.toString(),
-        email: employee.email,
-        role: employee.role
-      },
-      jwtSecret(),
-      { expiresIn: '24h' }
-    );
+    // Generate JWT token with proper expiration
+    const tokenPayload = {
+      userId: employee.id.toString(),
+      email: employee.email,
+      role: employee.role,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+    };
+
+    const token = jwt.sign(tokenPayload, jwtSecret(), { algorithm: 'HS256' });
 
     // Remove password hash from response
     const { password_hash, ...employeeData } = employee;
@@ -101,7 +101,12 @@ export const register = api<RegisterRequest, LoginResponse>(
       throw APIError.alreadyExists("User with this email already exists");
     }
 
-    // Hash password
+    // Validate password strength
+    if (req.password.length < 8) {
+      throw APIError.invalidArgument("Password must be at least 8 characters long");
+    }
+
+    // Hash password with higher salt rounds for security
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(req.password, saltRounds);
 
@@ -137,16 +142,16 @@ export const register = api<RegisterRequest, LoginResponse>(
       `;
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: employee.id.toString(),
-        email: employee.email,
-        role: employee.role
-      },
-      jwtSecret(),
-      { expiresIn: '24h' }
-    );
+    // Generate JWT token with proper expiration
+    const tokenPayload = {
+      userId: employee.id.toString(),
+      email: employee.email,
+      role: employee.role,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+    };
+
+    const token = jwt.sign(tokenPayload, jwtSecret(), { algorithm: 'HS256' });
 
     return {
       employee,
@@ -166,9 +171,14 @@ const auth = authHandler<AuthParams, AuthData>(
     }
 
     try {
-      // Verify JWT token
-      const decoded = jwt.verify(token, jwtSecret()) as any;
+      // Verify JWT token with proper algorithm specification
+      const decoded = jwt.verify(token, jwtSecret(), { algorithms: ['HS256'] }) as any;
       
+      // Check token expiration
+      if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
+        throw APIError.unauthenticated("Token expired");
+      }
+
       // Verify user still exists in database
       const employee = await leaveDB.queryRow<Employee>`
         SELECT 
@@ -181,11 +191,11 @@ const auth = authHandler<AuthParams, AuthData>(
           profile_image_url as "profileImageUrl",
           created_at as "createdAt"
         FROM employees
-        WHERE id = ${parseInt(decoded.userId)}
+        WHERE id = ${parseInt(decoded.userId)} AND email = ${decoded.email}
       `;
 
       if (!employee) {
-        throw APIError.unauthenticated("User not found");
+        throw APIError.unauthenticated("User not found or token invalid");
       }
 
       return {
@@ -204,5 +214,8 @@ const auth = authHandler<AuthParams, AuthData>(
     }
   }
 );
+
+// Configure the API gateway to use the auth handler
+export const gw = new Gateway({ authHandler: auth });
 
 export { auth };

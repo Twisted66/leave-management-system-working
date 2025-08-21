@@ -85,3 +85,17 @@ export interface AbsenceConversionRequest {
   approverName?: string;
   absenceDate?: Date;
 }
+
+export interface CompanyDocument {
+  id: number;
+  name: string;
+  description?: string;
+  documentType: 'license' | 'certificate' | 'policy' | 'other';
+  filePath: string;
+  fileSize: number;
+  expiryDate?: Date;
+  uploadedBy: number;
+  uploadedAt: Date;
+  updatedAt: Date;
+  uploaderName?: string;
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +47,7 @@ export default function Login() {
     try {
       await login(loginData.email, loginData.password);
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || 'Login failed. Please check your credentials and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -62,8 +62,8 @@ export default function Login() {
       return;
     }
 
-    if (registerData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (registerData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
       return;
     }
 
@@ -216,8 +216,11 @@ export default function Login() {
                       placeholder="Create a password"
                       className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                       required
-                      minLength={6}
+                      minLength={8}
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Minimum 8 characters
+                    </p>
                   </div>
 
                   <div>
@@ -230,7 +233,7 @@ export default function Login() {
                       placeholder="Confirm your password"
                       className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                       required
-                      minLength={6}
+                      minLength={8}
                     />
                   </div>
 

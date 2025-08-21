@@ -11,7 +11,8 @@ import {
   Settings,
   Sun,
   Moon,
-  LogOut
+  LogOut,
+  FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -30,6 +31,7 @@ const navigation = [
   { name: 'Leave Requests', href: '/leave-requests', icon: Calendar },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
   { name: 'Employees', href: '/employees', icon: Users },
+  { name: 'Documents', href: '/documents', icon: FolderOpen },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -47,6 +49,9 @@ export default function Layout({ children }: LayoutProps) {
       return false;
     }
     if (item.href === '/employees' && currentUser?.role === 'employee') {
+      return false;
+    }
+    if (item.href === '/documents' && currentUser?.role === 'employee') {
       return false;
     }
     return true;
