@@ -1,4 +1,5 @@
 import { api, APIError } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { leaveDB } from "./db";
 import type { LeaveRequest } from "./types";
 
@@ -12,8 +13,15 @@ interface CreateLeaveRequestRequest {
 
 // Creates a new leave request.
 export const createLeaveRequest = api<CreateLeaveRequestRequest, LeaveRequest>(
-  { expose: true, method: "POST", path: "/leave-requests" },
+  { expose: true, method: "POST", path: "/leave-requests", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+    
+    // Employees can only create requests for themselves
+    if (auth.role === 'employee' && req.employeeId !== parseInt(auth.userID)) {
+      throw APIError.permissionDenied("You can only create requests for yourself");
+    }
+
     // Calculate business days between start and end date
     const daysRequested = calculateBusinessDays(req.startDate, req.endDate);
     
@@ -76,17 +84,41 @@ interface ListLeaveRequestsResponse {
 
 // Retrieves leave requests with optional filtering.
 export const listLeaveRequests = api<ListLeaveRequestsParams, ListLeaveRequestsResponse>(
-  { expose: true, method: "GET", path: "/leave-requests" },
+  { expose: true, method: "GET", path: "/leave-requests", auth: true },
   async (params) => {
+    const auth = getAuthData()!;
+    
     let whereClause = "WHERE 1=1";
     const queryParams: any[] = [];
     
+    // Apply role-based filtering
+    if (auth.role === 'employee') {
+      // Employees can only see their own requests
+      whereClause += ` AND lr.employee_id = $${queryParams.length + 1}`;
+      queryParams.push(parseInt(auth.userID));
+    } else if (auth.role === 'manager' && !params.employeeId && !params.managerId) {
+      // Managers see their team's requests by default
+      whereClause += ` AND e.manager_id = $${queryParams.length + 1}`;
+      queryParams.push(parseInt(auth.userID));
+    }
+    
     if (params.employeeId) {
+      // HR can see any employee's requests, managers can see their team's requests
+      if (auth.role === 'manager') {
+        // Verify the employee reports to this manager
+        const isTeamMember = await leaveDB.queryRow<{count: number}>`
+          SELECT COUNT(*) as count FROM employees 
+          WHERE id = ${params.employeeId} AND manager_id = ${parseInt(auth.userID)}
+        `;
+        if (!isTeamMember || isTeamMember.count === 0) {
+          throw APIError.permissionDenied("You can only view requests from your team members");
+        }
+      }
       whereClause += ` AND lr.employee_id = $${queryParams.length + 1}`;
       queryParams.push(params.employeeId);
     }
     
-    if (params.managerId) {
+    if (params.managerId && auth.role === 'hr') {
       whereClause += ` AND e.manager_id = $${queryParams.length + 1}`;
       queryParams.push(params.managerId);
     }
@@ -136,8 +168,15 @@ interface UpdateLeaveRequestStatusRequest {
 
 // Updates the status of a leave request (approve/reject).
 export const updateLeaveRequestStatus = api<UpdateLeaveRequestStatusRequest, LeaveRequest>(
-  { expose: true, method: "PUT", path: "/leave-requests/:id/status" },
+  { expose: true, method: "PUT", path: "/leave-requests/:id/status", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+    
+    // Only managers and HR can approve/reject requests
+    if (auth.role === 'employee') {
+      throw APIError.permissionDenied("You don't have permission to approve/reject requests");
+    }
+
     const now = new Date();
     
     // Get the leave request details first
@@ -146,14 +185,17 @@ export const updateLeaveRequestStatus = api<UpdateLeaveRequestStatusRequest, Lea
       leaveTypeId: number;
       daysRequested: number;
       status: string;
+      managerId?: number;
     }>`
       SELECT 
-        employee_id as "employeeId",
-        leave_type_id as "leaveTypeId",
-        days_requested as "daysRequested",
-        status
-      FROM leave_requests 
-      WHERE id = ${req.id}
+        lr.employee_id as "employeeId",
+        lr.leave_type_id as "leaveTypeId",
+        lr.days_requested as "daysRequested",
+        lr.status,
+        e.manager_id as "managerId"
+      FROM leave_requests lr
+      JOIN employees e ON lr.employee_id = e.id
+      WHERE lr.id = ${req.id}
     `;
 
     if (!existingRequest) {
@@ -162,6 +204,11 @@ export const updateLeaveRequestStatus = api<UpdateLeaveRequestStatusRequest, Lea
 
     if (existingRequest.status !== 'pending') {
       throw APIError.invalidArgument("Leave request has already been processed");
+    }
+
+    // Managers can only approve requests from their team
+    if (auth.role === 'manager' && existingRequest.managerId !== parseInt(auth.userID)) {
+      throw APIError.permissionDenied("You can only approve requests from your team members");
     }
 
     // Update the request status

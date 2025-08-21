@@ -5,34 +5,58 @@ import type { Employee } from '~backend/leave/types';
 interface AuthContextType {
   currentUser: Employee | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
+  token: string | null;
+}
+
+interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+  department: string;
+  role?: 'employee' | 'manager' | 'hr';
+  managerId?: number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check for existing token on app load
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      validateToken(token);
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      setToken(storedToken);
+      validateToken(storedToken);
     } else {
       setIsLoading(false);
     }
   }, []);
 
-  const validateToken = async (token: string) => {
+  const validateToken = async (tokenToValidate: string) => {
     try {
-      const response = await backend.leave.validateToken({ token });
-      setCurrentUser(response.employee);
+      // Decode JWT to get user info (basic validation)
+      const payload = JSON.parse(atob(tokenToValidate.split('.')[1]));
+      
+      // Check if token is expired
+      if (payload.exp * 1000 < Date.now()) {
+        throw new Error('Token expired');
+      }
+
+      // Get user data from the token payload
+      const userData = await backend.leave.getEmployee({ id: parseInt(payload.userId) });
+      setCurrentUser(userData);
     } catch (error) {
       console.error('Token validation failed:', error);
       localStorage.removeItem('authToken');
+      setToken(null);
+      setCurrentUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -42,6 +66,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await backend.leave.login({ email, password });
       setCurrentUser(response.employee);
+      setToken(response.token);
+      localStorage.setItem('authToken', response.token);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const register = async (data: RegisterData) => {
+    try {
+      const response = await backend.leave.register(data);
+      setCurrentUser(response.employee);
+      setToken(response.token);
       localStorage.setItem('authToken', response.token);
     } catch (error) {
       throw error;
@@ -50,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setCurrentUser(null);
+    setToken(null);
     localStorage.removeItem('authToken');
   };
 
@@ -57,9 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       currentUser,
       login,
+      register,
       logout,
       isLoading,
-      isAuthenticated: !!currentUser
+      isAuthenticated: !!currentUser,
+      token
     }}>
       {children}
     </AuthContext.Provider>

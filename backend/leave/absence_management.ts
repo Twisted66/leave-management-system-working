@@ -1,4 +1,5 @@
 import { api, APIError } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { leaveDB } from "./db";
 import type { AbsenceRecord, AbsenceConversionRequest } from "./types";
 
@@ -10,10 +11,16 @@ interface CreateAbsenceRecordRequest {
 
 // Creates a new absence record (HR only).
 export const createAbsenceRecord = api<CreateAbsenceRecordRequest, AbsenceRecord>(
-  { expose: true, method: "POST", path: "/absence-records" },
+  { expose: true, method: "POST", path: "/absence-records", auth: true },
   async (req) => {
-    // In a real app, you'd verify the user is HR here
-    const createdBy = 1; // Assuming HR user ID is 1 for demo
+    const auth = getAuthData()!;
+    
+    // Only HR can create absence records
+    if (auth.role !== 'hr') {
+      throw new Error("Access denied. HR role required.");
+    }
+
+    const createdBy = parseInt(auth.userID);
 
     const absenceRecord = await leaveDB.queryRow<AbsenceRecord>`
       INSERT INTO absence_records (employee_id, absence_date, reason, created_by)
@@ -48,12 +55,38 @@ interface ListAbsenceRecordsResponse {
 
 // Retrieves absence records with optional filtering.
 export const listAbsenceRecords = api<ListAbsenceRecordsParams, ListAbsenceRecordsResponse>(
-  { expose: true, method: "GET", path: "/absence-records" },
+  { expose: true, method: "GET", path: "/absence-records", auth: true },
   async (params) => {
+    const auth = getAuthData()!;
+    
     let whereClause = "WHERE 1=1";
     const queryParams: any[] = [];
     
+    // Apply role-based filtering
+    if (auth.role === 'employee') {
+      // Employees can only see their own absence records
+      whereClause += ` AND ar.employee_id = $${queryParams.length + 1}`;
+      queryParams.push(parseInt(auth.userID));
+    } else if (auth.role === 'manager' && !params.employeeId) {
+      // Managers see their team's absence records by default
+      whereClause += ` AND e.manager_id = $${queryParams.length + 1}`;
+      queryParams.push(parseInt(auth.userID));
+    }
+    
     if (params.employeeId) {
+      // Verify access permissions
+      if (auth.role === 'employee' && params.employeeId !== parseInt(auth.userID)) {
+        throw new Error("You can only view your own absence records");
+      }
+      if (auth.role === 'manager') {
+        const isTeamMember = await leaveDB.queryRow<{count: number}>`
+          SELECT COUNT(*) as count FROM employees 
+          WHERE id = ${params.employeeId} AND (manager_id = ${parseInt(auth.userID)} OR id = ${parseInt(auth.userID)})
+        `;
+        if (!isTeamMember || isTeamMember.count === 0) {
+          throw new Error("You can only view absence records for yourself or your team members");
+        }
+      }
       whereClause += ` AND ar.employee_id = $${queryParams.length + 1}`;
       queryParams.push(params.employeeId);
     }
@@ -94,8 +127,10 @@ interface CreateAbsenceConversionRequest {
 
 // Creates a new absence conversion request.
 export const createAbsenceConversionRequest = api<CreateAbsenceConversionRequest, AbsenceConversionRequest>(
-  { expose: true, method: "POST", path: "/absence-conversion-requests" },
+  { expose: true, method: "POST", path: "/absence-conversion-requests", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+
     // Get the absence record to verify it exists and get employee info
     const absenceRecord = await leaveDB.queryRow<{employeeId: number; status: string}>`
       SELECT employee_id as "employeeId", status
@@ -105,6 +140,11 @@ export const createAbsenceConversionRequest = api<CreateAbsenceConversionRequest
 
     if (!absenceRecord) {
       throw APIError.notFound("Absence record not found");
+    }
+
+    // Employees can only create conversion requests for their own absences
+    if (auth.role === 'employee' && absenceRecord.employeeId !== parseInt(auth.userID)) {
+      throw new Error("You can only create conversion requests for your own absences");
     }
 
     if (absenceRecord.status !== 'pending') {
@@ -158,17 +198,43 @@ interface ListAbsenceConversionRequestsResponse {
 
 // Retrieves absence conversion requests with optional filtering.
 export const listAbsenceConversionRequests = api<ListAbsenceConversionRequestsParams, ListAbsenceConversionRequestsResponse>(
-  { expose: true, method: "GET", path: "/absence-conversion-requests" },
+  { expose: true, method: "GET", path: "/absence-conversion-requests", auth: true },
   async (params) => {
+    const auth = getAuthData()!;
+    
     let whereClause = "WHERE 1=1";
     const queryParams: any[] = [];
     
+    // Apply role-based filtering
+    if (auth.role === 'employee') {
+      // Employees can only see their own conversion requests
+      whereClause += ` AND acr.employee_id = $${queryParams.length + 1}`;
+      queryParams.push(parseInt(auth.userID));
+    } else if (auth.role === 'manager' && !params.employeeId && !params.managerId) {
+      // Managers see their team's conversion requests by default
+      whereClause += ` AND e.manager_id = $${queryParams.length + 1}`;
+      queryParams.push(parseInt(auth.userID));
+    }
+    
     if (params.employeeId) {
+      // Verify access permissions
+      if (auth.role === 'employee' && params.employeeId !== parseInt(auth.userID)) {
+        throw new Error("You can only view your own conversion requests");
+      }
+      if (auth.role === 'manager') {
+        const isTeamMember = await leaveDB.queryRow<{count: number}>`
+          SELECT COUNT(*) as count FROM employees 
+          WHERE id = ${params.employeeId} AND (manager_id = ${parseInt(auth.userID)} OR id = ${parseInt(auth.userID)})
+        `;
+        if (!isTeamMember || isTeamMember.count === 0) {
+          throw new Error("You can only view conversion requests for yourself or your team members");
+        }
+      }
       whereClause += ` AND acr.employee_id = $${queryParams.length + 1}`;
       queryParams.push(params.employeeId);
     }
     
-    if (params.managerId) {
+    if (params.managerId && auth.role === 'hr') {
       whereClause += ` AND e.manager_id = $${queryParams.length + 1}`;
       queryParams.push(params.managerId);
     }
@@ -215,8 +281,15 @@ interface UpdateAbsenceConversionStatusRequest {
 
 // Updates the status of an absence conversion request (approve/reject).
 export const updateAbsenceConversionStatus = api<UpdateAbsenceConversionStatusRequest, AbsenceConversionRequest>(
-  { expose: true, method: "PUT", path: "/absence-conversion-requests/:id/status" },
+  { expose: true, method: "PUT", path: "/absence-conversion-requests/:id/status", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+    
+    // Only managers and HR can approve/reject conversion requests
+    if (auth.role === 'employee') {
+      throw new Error("You don't have permission to approve/reject conversion requests");
+    }
+
     const now = new Date();
     
     // Get the conversion request details first
@@ -224,13 +297,16 @@ export const updateAbsenceConversionStatus = api<UpdateAbsenceConversionStatusRe
       employeeId: number;
       absenceRecordId: number;
       status: string;
+      managerId?: number;
     }>`
       SELECT 
-        employee_id as "employeeId",
-        absence_record_id as "absenceRecordId",
-        status
-      FROM absence_conversion_requests 
-      WHERE id = ${req.id}
+        acr.employee_id as "employeeId",
+        acr.absence_record_id as "absenceRecordId",
+        acr.status,
+        e.manager_id as "managerId"
+      FROM absence_conversion_requests acr
+      JOIN employees e ON acr.employee_id = e.id
+      WHERE acr.id = ${req.id}
     `;
 
     if (!existingRequest) {
@@ -239,6 +315,11 @@ export const updateAbsenceConversionStatus = api<UpdateAbsenceConversionStatusRe
 
     if (existingRequest.status !== 'pending') {
       throw APIError.invalidArgument("Absence conversion request has already been processed");
+    }
+
+    // Managers can only approve requests from their team
+    if (auth.role === 'manager' && existingRequest.managerId !== parseInt(auth.userID)) {
+      throw new Error("You can only approve conversion requests from your team members");
     }
 
     // Update the request status

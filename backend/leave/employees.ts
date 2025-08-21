@@ -1,6 +1,8 @@
 import { api } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
+import * as bcrypt from "bcrypt";
 
 interface ListEmployeesResponse {
   employees: Employee[];
@@ -8,8 +10,15 @@ interface ListEmployeesResponse {
 
 // Retrieves all employees.
 export const listEmployees = api<void, ListEmployeesResponse>(
-  { expose: true, method: "GET", path: "/employees" },
+  { expose: true, method: "GET", path: "/employees", auth: true },
   async () => {
+    const auth = getAuthData()!;
+    
+    // Only HR can list all employees
+    if (auth.role !== 'hr') {
+      throw new Error("Access denied. HR role required.");
+    }
+
     const employees = await leaveDB.queryAll<Employee>`
       SELECT 
         id,
@@ -33,8 +42,26 @@ interface GetEmployeeParams {
 
 // Retrieves a specific employee by ID.
 export const getEmployee = api<GetEmployeeParams, Employee>(
-  { expose: true, method: "GET", path: "/employees/:id" },
+  { expose: true, method: "GET", path: "/employees/:id", auth: true },
   async ({ id }) => {
+    const auth = getAuthData()!;
+    
+    // Employees can only view their own profile
+    if (auth.role === 'employee' && id !== parseInt(auth.userID)) {
+      throw new Error("You can only view your own profile");
+    }
+
+    // Managers can view their team members' profiles
+    if (auth.role === 'manager') {
+      const isAuthorized = await leaveDB.queryRow<{count: number}>`
+        SELECT COUNT(*) as count FROM employees 
+        WHERE id = ${id} AND (manager_id = ${parseInt(auth.userID)} OR id = ${parseInt(auth.userID)})
+      `;
+      if (!isAuthorized || isAuthorized.count === 0) {
+        throw new Error("You can only view your own profile or your team members' profiles");
+      }
+    }
+
     const employee = await leaveDB.queryRow<Employee>`
       SELECT 
         id,
@@ -61,15 +88,27 @@ interface CreateEmployeeRequest {
   department: string;
   role: 'employee' | 'manager' | 'hr';
   managerId?: number;
+  password: string;
 }
 
 // Creates a new employee and initializes their leave balances.
 export const createEmployee = api<CreateEmployeeRequest, Employee>(
-  { expose: true, method: "POST", path: "/employees" },
+  { expose: true, method: "POST", path: "/employees", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+    
+    // Only HR can create employees
+    if (auth.role !== 'hr') {
+      throw new Error("Access denied. HR role required.");
+    }
+
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(req.password, saltRounds);
+
     const employee = await leaveDB.queryRow<Employee>`
-      INSERT INTO employees (email, name, department, role, manager_id)
-      VALUES (${req.email}, ${req.name}, ${req.department}, ${req.role}, ${req.managerId || null})
+      INSERT INTO employees (email, name, department, role, manager_id, password_hash)
+      VALUES (${req.email}, ${req.name}, ${req.department}, ${req.role}, ${req.managerId || null}, ${passwordHash})
       RETURNING 
         id,
         email,
@@ -111,8 +150,26 @@ interface UpdateEmployeeProfileRequest {
 
 // Updates an employee's profile information.
 export const updateEmployeeProfile = api<UpdateEmployeeProfileRequest, Employee>(
-  { expose: true, method: "PUT", path: "/employees/:id/profile" },
+  { expose: true, method: "PUT", path: "/employees/:id/profile", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+    
+    // Employees can only update their own profile
+    if (auth.role === 'employee' && req.id !== parseInt(auth.userID)) {
+      throw new Error("You can only update your own profile");
+    }
+
+    // Managers can update their own profile or their team members' profiles (limited fields)
+    if (auth.role === 'manager' && req.id !== parseInt(auth.userID)) {
+      const isTeamMember = await leaveDB.queryRow<{count: number}>`
+        SELECT COUNT(*) as count FROM employees 
+        WHERE id = ${req.id} AND manager_id = ${parseInt(auth.userID)}
+      `;
+      if (!isTeamMember || isTeamMember.count === 0) {
+        throw new Error("You can only update your own profile or your team members' profiles");
+      }
+    }
+
     const updateFields: string[] = [];
     const updateValues: any[] = [];
     let paramIndex = 1;

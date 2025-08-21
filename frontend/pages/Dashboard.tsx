@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
-import backend from '~backend/client';
 import { useUser } from '../contexts/UserContext';
+import { useBackend } from '../hooks/useBackend';
 
 export default function Dashboard() {
   const { currentUser } = useUser();
+  const backend = useBackend();
 
   const { data: balances } = useQuery({
     queryKey: ['balances', currentUser?.id],

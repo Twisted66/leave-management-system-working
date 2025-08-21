@@ -1,4 +1,5 @@
 import { api } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { leaveDB } from "./db";
 import type { LeaveBalance } from "./types";
 
@@ -12,8 +13,26 @@ interface GetEmployeeBalancesResponse {
 
 // Retrieves leave balances for a specific employee.
 export const getEmployeeBalances = api<GetEmployeeBalancesParams, GetEmployeeBalancesResponse>(
-  { expose: true, method: "GET", path: "/employees/:employeeId/balances" },
+  { expose: true, method: "GET", path: "/employees/:employeeId/balances", auth: true },
   async ({ employeeId }) => {
+    const auth = getAuthData()!;
+    
+    // Employees can only view their own balances
+    if (auth.role === 'employee' && employeeId !== parseInt(auth.userID)) {
+      throw new Error("You can only view your own balances");
+    }
+
+    // Managers can only view their team members' balances
+    if (auth.role === 'manager') {
+      const isTeamMember = await leaveDB.queryRow<{count: number}>`
+        SELECT COUNT(*) as count FROM employees 
+        WHERE id = ${employeeId} AND (manager_id = ${parseInt(auth.userID)} OR id = ${parseInt(auth.userID)})
+      `;
+      if (!isTeamMember || isTeamMember.count === 0) {
+        throw new Error("You can only view balances for yourself or your team members");
+      }
+    }
+
     const currentYear = new Date().getFullYear();
     const balances = await leaveDB.queryAll<LeaveBalance>`
       SELECT 
@@ -44,8 +63,15 @@ interface UpdateBalanceRequest {
 
 // Updates an employee's leave balance (HR only).
 export const updateBalance = api<UpdateBalanceRequest, LeaveBalance>(
-  { expose: true, method: "PUT", path: "/balances" },
+  { expose: true, method: "PUT", path: "/balances", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+    
+    // Only HR can update balances
+    if (auth.role !== 'hr') {
+      throw new Error("Access denied. HR role required.");
+    }
+
     const currentYear = new Date().getFullYear();
     const balance = await leaveDB.queryRow<LeaveBalance>`
       UPDATE employee_leave_balances 

@@ -27,6 +27,7 @@ export default function CreateEmployeeDialog({
     department: '',
     role: 'employee' as 'employee' | 'manager' | 'hr',
     managerId: '',
+    password: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -44,6 +45,7 @@ export default function CreateEmployeeDialog({
       department: '',
       role: 'employee',
       managerId: '',
+      password: '',
     });
   };
 
@@ -85,6 +87,22 @@ export default function CreateEmployeeDialog({
               required
               className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="password" className="text-gray-900 dark:text-white">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              required
+              minLength={6}
+              className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Minimum 6 characters
+            </p>
           </div>
 
           <div>

@@ -1,4 +1,5 @@
 import { api } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { leaveDB } from "./db";
 
 interface LeaveUsageReport {
@@ -32,8 +33,15 @@ interface GetLeaveUsageReportParams {
 
 // Generates a comprehensive leave usage report for HR.
 export const getLeaveUsageReport = api<GetLeaveUsageReportParams, LeaveUsageReportResponse>(
-  { expose: true, method: "GET", path: "/reports/leave-usage" },
+  { expose: true, method: "GET", path: "/reports/leave-usage", auth: true },
   async (params) => {
+    const auth = getAuthData()!;
+    
+    // Only HR can access reports
+    if (auth.role !== 'hr') {
+      throw new Error("Access denied. HR role required.");
+    }
+
     const year = params.year || new Date().getFullYear();
     
     let whereClause = "WHERE elb.year = $1";
@@ -63,6 +71,7 @@ export const getLeaveUsageReport = api<GetLeaveUsageReportParams, LeaveUsageRepo
       JOIN employees e ON elb.employee_id = e.id
       JOIN leave_types lt ON elb.leave_type_id = lt.id
       ${whereClause}
+      AND e.role != 'hr'
       ORDER BY e.department, e.name, lt.name
     `;
 
@@ -83,6 +92,7 @@ export const getLeaveUsageReport = api<GetLeaveUsageReportParams, LeaveUsageRepo
       FROM employee_leave_balances elb
       JOIN employees e ON elb.employee_id = e.id
       ${whereClause}
+      AND e.role != 'hr'
       GROUP BY e.department
       ORDER BY e.department
     `;
@@ -107,35 +117,56 @@ interface PendingRequestsSummary {
 
 // Generates a summary of pending leave requests for managers and HR.
 export const getPendingRequestsSummary = api<void, PendingRequestsSummary>(
-  { expose: true, method: "GET", path: "/reports/pending-requests" },
+  { expose: true, method: "GET", path: "/reports/pending-requests", auth: true },
   async () => {
-    const totalPending = await leaveDB.queryRow<{count: number}>`
-      SELECT COUNT(*) as count
-      FROM leave_requests
-      WHERE status = 'pending'
-    `;
+    const auth = getAuthData()!;
+    
+    // Only managers and HR can access this report
+    if (auth.role === 'employee') {
+      throw new Error("Access denied. Manager or HR role required.");
+    }
 
-    const byDepartment = await leaveDB.queryAll<{department: string; pendingCount: number}>`
-      SELECT 
+    let whereClause = "WHERE lr.status = 'pending'";
+    const queryParams: any[] = [];
+
+    // If manager, only show their team's requests
+    if (auth.role === 'manager') {
+      whereClause += " AND e.manager_id = $1";
+      queryParams.push(parseInt(auth.userID));
+    }
+
+    const totalPending = await leaveDB.rawQueryRow<{count: number}>(
+      `SELECT COUNT(*) as count
+       FROM leave_requests lr
+       JOIN employees e ON lr.employee_id = e.id
+       ${whereClause}`,
+      ...queryParams
+    );
+
+    const byDepartment = await leaveDB.rawQueryAll<{department: string; pendingCount: number}>(
+      `SELECT 
         e.department,
         COUNT(*) as "pendingCount"
       FROM leave_requests lr
       JOIN employees e ON lr.employee_id = e.id
-      WHERE lr.status = 'pending'
+      ${whereClause}
       GROUP BY e.department
-      ORDER BY "pendingCount" DESC
-    `;
+      ORDER BY "pendingCount" DESC`,
+      ...queryParams
+    );
 
-    const byLeaveType = await leaveDB.queryAll<{leaveTypeName: string; pendingCount: number}>`
-      SELECT 
+    const byLeaveType = await leaveDB.rawQueryAll<{leaveTypeName: string; pendingCount: number}>(
+      `SELECT 
         lt.name as "leaveTypeName",
         COUNT(*) as "pendingCount"
       FROM leave_requests lr
+      JOIN employees e ON lr.employee_id = e.id
       JOIN leave_types lt ON lr.leave_type_id = lt.id
-      WHERE lr.status = 'pending'
+      ${whereClause}
       GROUP BY lt.name
-      ORDER BY "pendingCount" DESC
-    `;
+      ORDER BY "pendingCount" DESC`,
+      ...queryParams
+    );
 
     return {
       totalPending: totalPending?.count || 0,

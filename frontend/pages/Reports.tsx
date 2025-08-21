@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, BarChart3, Users, Calendar } from 'lucide-react';
-import backend from '~backend/client';
 import { useUser } from '../contexts/UserContext';
+import { useBackend } from '../hooks/useBackend';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 function ReportsContent() {
   const { currentUser } = useUser();
+  const backend = useBackend();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
 
@@ -95,26 +96,26 @@ function ReportsContent() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2024">2024</SelectItem>
-                  <SelectItem value="2023">2023</SelectItem>
-                  <SelectItem value="2022">2022</SelectItem>
+                <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
+                  <SelectItem value="2024" className="dark:text-white">2024</SelectItem>
+                  <SelectItem value="2023" className="dark:text-white">2023</SelectItem>
+                  <SelectItem value="2022" className="dark:text-white">2022</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
               <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                   <SelectValue placeholder="All departments" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All departments</SelectItem>
+                <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
+                  <SelectItem value="" className="dark:text-white">All departments</SelectItem>
                   {departments.map(dept => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    <SelectItem key={dept} value={dept} className="dark:text-white">{dept}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
