@@ -9,7 +9,8 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "encore.dev": "^1.48.13",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.0"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

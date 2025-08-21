@@ -7,6 +7,7 @@ export interface Employee {
   managerId?: number;
   profileImageUrl?: string;
   createdAt: Date;
+  auth0Sub?: string; // Auth0 subject identifier
 }
 
 export interface LeaveType {

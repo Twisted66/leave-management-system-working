@@ -4,19 +4,21 @@ import { secret } from "encore.dev/config";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
 import * as jwt from "jsonwebtoken";
-import * as bcrypt from "bcrypt";
+import * as jwksClient from "jwks-rsa";
 
-const jwtSecret = secret("JWTSecret");
+// Auth0 configuration secrets
+const auth0Domain = secret("Auth0Domain");
+const auth0Audience = secret("Auth0Audience");
 
-interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-interface LoginResponse {
-  employee: Employee;
-  token: string;
-}
+// JWKS client for fetching Auth0 public keys
+const jwksClientInstance = jwksClient({
+  jwksUri: `https://${auth0Domain()}/.well-known/jwks.json`,
+  requestHeaders: {}, // Optional
+  timeout: 30000, // Defaults to 30s
+  cache: true,
+  cacheMaxEntries: 5, // Default value
+  cacheMaxAge: 600000, // Default value (10 minutes)
+});
 
 interface AuthParams {
   authorization?: Header<"Authorization">;
@@ -27,140 +29,78 @@ export interface AuthData {
   userID: string;
   email: string;
   role: 'employee' | 'manager' | 'hr';
+  auth0Sub: string; // Auth0 subject identifier
 }
 
-// Authenticates a user with email and password.
-export const login = api<LoginRequest, LoginResponse>(
-  { expose: true, method: "POST", path: "/auth/login" },
-  async (req) => {
-    const employee = await leaveDB.queryRow<Employee & { password_hash: string }>`
-      SELECT 
-        id,
-        email,
-        name,
-        department,
-        role,
-        manager_id as "managerId",
-        profile_image_url as "profileImageUrl",
-        created_at as "createdAt",
-        password_hash
-      FROM employees
-      WHERE email = ${req.email}
-    `;
-
-    if (!employee) {
-      throw APIError.unauthenticated("Invalid email or password");
+/**
+ * Gets the signing key from Auth0's JWKS endpoint
+ */
+function getKey(header: any, callback: any) {
+  jwksClientInstance.getSigningKey(header.kid, (err, key) => {
+    if (err) {
+      callback(err);
+      return;
     }
-
-    // Verify password
-    const isValidPassword = await bcrypt.compare(req.password, employee.password_hash);
-    if (!isValidPassword) {
-      throw APIError.unauthenticated("Invalid email or password");
-    }
-
-    // Generate JWT token with proper expiration
-    const tokenPayload = {
-      userId: employee.id.toString(),
-      email: employee.email,
-      role: employee.role,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
-    };
-
-    const token = jwt.sign(tokenPayload, jwtSecret(), { algorithm: 'HS256' });
-
-    // Remove password hash from response
-    const { password_hash, ...employeeData } = employee;
-
-    return {
-      employee: employeeData,
-      token
-    };
-  }
-);
-
-interface RegisterRequest {
-  email: string;
-  password: string;
-  name: string;
-  department: string;
-  role?: 'employee' | 'manager' | 'hr';
-  managerId?: number;
+    const signingKey = key?.getPublicKey();
+    callback(null, signingKey);
+  });
 }
 
-// Registers a new user account.
-export const register = api<RegisterRequest, LoginResponse>(
-  { expose: true, method: "POST", path: "/auth/register" },
-  async (req) => {
-    // Check if user already exists
-    const existingUser = await leaveDB.queryRow<{ id: number }>`
-      SELECT id FROM employees WHERE email = ${req.email}
-    `;
+/**
+ * Validates Auth0 JWT token using RS256 algorithm
+ */
+async function validateAuth0Token(token: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    jwt.verify(
+      token,
+      getKey,
+      {
+        audience: auth0Audience(),
+        issuer: `https://${auth0Domain()}/`,
+        algorithms: ['RS256']
+      },
+      (err, decoded) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(decoded);
+        }
+      }
+    );
+  });
+}
 
-    if (existingUser) {
-      throw APIError.alreadyExists("User with this email already exists");
-    }
-
-    // Validate password strength
-    if (req.password.length < 8) {
-      throw APIError.invalidArgument("Password must be at least 8 characters long");
-    }
-
-    // Hash password with higher salt rounds for security
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(req.password, saltRounds);
-
-    // Create employee
-    const employee = await leaveDB.queryRow<Employee>`
-      INSERT INTO employees (email, name, department, role, manager_id, password_hash)
-      VALUES (${req.email}, ${req.name}, ${req.department}, ${req.role || 'employee'}, ${req.managerId || null}, ${passwordHash})
-      RETURNING 
-        id,
-        email,
-        name,
-        department,
-        role,
-        manager_id as "managerId",
-        profile_image_url as "profileImageUrl",
-        created_at as "createdAt"
-    `;
-
-    if (!employee) {
-      throw new Error("Failed to create employee");
-    }
-
-    // Initialize leave balances for the new employee
-    if (employee.role !== 'hr') {
-      await leaveDB.exec`
-        INSERT INTO employee_leave_balances (employee_id, leave_type_id, year, allocated_days)
-        SELECT 
-          ${employee.id} as employee_id,
-          lt.id as leave_type_id,
-          EXTRACT(YEAR FROM NOW()) as year,
-          lt.annual_allocation as allocated_days
-        FROM leave_types lt
-      `;
-    }
-
-    // Generate JWT token with proper expiration
-    const tokenPayload = {
-      userId: employee.id.toString(),
-      email: employee.email,
-      role: employee.role,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
-    };
-
-    const token = jwt.sign(tokenPayload, jwtSecret(), { algorithm: 'HS256' });
-
-    return {
-      employee,
-      token
-    };
-  }
-);
-
-// Auth handler for protecting endpoints
+/**
+ * Auth0 Authentication Handler
+ * 
+ * This handler validates JWT tokens issued by Auth0 and maps them to internal user data.
+ * 
+ * Auth0 Configuration Required:
+ * 1. Create an Auth0 tenant at https://auth0.com
+ * 2. Create a Single Page Application (SPA) in your Auth0 dashboard
+ * 3. Configure the following settings in your Auth0 application:
+ *    - Allowed Callback URLs: https://yourdomain.com/callback
+ *    - Allowed Logout URLs: https://yourdomain.com
+ *    - Allowed Web Origins: https://yourdomain.com
+ *    - Allowed Origins (CORS): https://yourdomain.com
+ * 4. Set the following Encore secrets:
+ *    - Auth0Domain: your-tenant.auth0.com
+ *    - Auth0Audience: your-api-identifier (create an API in Auth0 dashboard)
+ * 5. Configure Auth0 Rules or Actions to include custom claims:
+ *    - Add user metadata like role, employee_id to the token
+ * 
+ * Example Auth0 Rule to add custom claims:
+ * ```javascript
+ * function addCustomClaims(user, context, callback) {
+ *   const namespace = 'https://yourapp.com/';
+ *   context.idToken[namespace + 'role'] = user.app_metadata.role || 'employee';
+ *   context.idToken[namespace + 'employee_id'] = user.app_metadata.employee_id;
+ *   context.accessToken[namespace + 'role'] = user.app_metadata.role || 'employee';
+ *   context.accessToken[namespace + 'employee_id'] = user.app_metadata.employee_id;
+ *   callback(null, user, context);
+ * }
+ * ```
+ */
 const auth = authHandler<AuthParams, AuthData>(
   async (params) => {
     // Get token from Authorization header or session cookie
@@ -171,37 +111,75 @@ const auth = authHandler<AuthParams, AuthData>(
     }
 
     try {
-      // Verify JWT token with proper algorithm specification
-      const decoded = jwt.verify(token, jwtSecret(), { algorithms: ['HS256'] }) as any;
+      // Validate the Auth0 JWT token
+      const decoded = await validateAuth0Token(token);
       
-      // Check token expiration
-      if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
-        throw APIError.unauthenticated("Token expired");
+      if (!decoded || !decoded.sub) {
+        throw APIError.unauthenticated("Invalid token payload");
       }
 
-      // Verify user still exists in database
-      const employee = await leaveDB.queryRow<Employee>`
-        SELECT 
-          id,
-          email,
-          name,
-          department,
-          role,
-          manager_id as "managerId",
-          profile_image_url as "profileImageUrl",
-          created_at as "createdAt"
-        FROM employees
-        WHERE id = ${parseInt(decoded.userId)} AND email = ${decoded.email}
-      `;
+      // Extract user information from token
+      const auth0Sub = decoded.sub;
+      const email = decoded.email;
+      
+      // Extract custom claims (adjust namespace to match your Auth0 configuration)
+      const namespace = 'https://yourapp.com/';
+      const role = decoded[namespace + 'role'] || 'employee';
+      const employeeId = decoded[namespace + 'employee_id'];
+
+      // If employee_id is provided in token, use it; otherwise look up by email
+      let employee: Employee | null = null;
+      
+      if (employeeId) {
+        employee = await leaveDB.queryRow<Employee>`
+          SELECT 
+            id,
+            email,
+            name,
+            department,
+            role,
+            manager_id as "managerId",
+            profile_image_url as "profileImageUrl",
+            created_at as "createdAt",
+            auth0_sub as "auth0Sub"
+          FROM employees
+          WHERE id = ${employeeId}
+        `;
+      } else if (email) {
+        employee = await leaveDB.queryRow<Employee>`
+          SELECT 
+            id,
+            email,
+            name,
+            department,
+            role,
+            manager_id as "managerId",
+            profile_image_url as "profileImageUrl",
+            created_at as "createdAt",
+            auth0_sub as "auth0Sub"
+          FROM employees
+          WHERE email = ${email}
+        `;
+      }
 
       if (!employee) {
-        throw APIError.unauthenticated("User not found or token invalid");
+        throw APIError.unauthenticated("User not found in system");
+      }
+
+      // Update employee record with Auth0 subject if not already set
+      if (!employee.auth0Sub) {
+        await leaveDB.exec`
+          UPDATE employees 
+          SET auth0_sub = ${auth0Sub}
+          WHERE id = ${employee.id}
+        `;
       }
 
       return {
-        userID: decoded.userId,
-        email: decoded.email,
-        role: decoded.role
+        userID: employee.id.toString(),
+        email: employee.email,
+        role: employee.role,
+        auth0Sub: auth0Sub
       };
     } catch (error) {
       if (error instanceof jwt.JsonWebTokenError) {
@@ -215,7 +193,51 @@ const auth = authHandler<AuthParams, AuthData>(
   }
 );
 
-// Configure the API gateway to use the auth handler
+// Configure the API gateway to use the Auth0 auth handler
 export const gw = new Gateway({ authHandler: auth });
 
 export { auth };
+
+/**
+ * Legacy login endpoint - deprecated in favor of Auth0
+ * This endpoint is kept for backward compatibility but should not be used
+ * with Auth0 authentication enabled.
+ */
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface LoginResponse {
+  employee: Employee;
+  token: string;
+}
+
+// Authenticates a user with email and password (DEPRECATED - use Auth0 instead).
+export const login = api<LoginRequest, LoginResponse>(
+  { expose: true, method: "POST", path: "/auth/login" },
+  async (req) => {
+    throw APIError.unimplemented("Login via email/password is disabled. Please use Auth0 authentication.");
+  }
+);
+
+/**
+ * Legacy register endpoint - deprecated in favor of Auth0
+ * User registration should be handled through Auth0 signup flows
+ */
+interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+  department: string;
+  role?: 'employee' | 'manager' | 'hr';
+  managerId?: number;
+}
+
+// Registers a new user account (DEPRECATED - use Auth0 instead).
+export const register = api<RegisterRequest, LoginResponse>(
+  { expose: true, method: "POST", path: "/auth/register" },
+  async (req) => {
+    throw APIError.unimplemented("Registration via email/password is disabled. Please use Auth0 authentication.");
+  }
+);
