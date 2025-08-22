@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "bun",
   "scripts": {
-    "build": "cd ../frontend && rm -rf node_modules && rm -rf dist && rm -rf .vite && bun install --no-cache && vite build --outDir=../backend/frontend/dist --force"
+    "build": "cd ../frontend && rm -rf node_modules && rm -rf dist && rm -rf .vite && bun install --no-cache && vite build --outDir=../backend/frontend/dist --emptyOutDir"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
