@@ -17,8 +17,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         audience: import.meta.env.VITE_AUTH0_AUDIENCE
       }}
     >
+    }}
     >
-      <App />
-    </Auth0Provider>
-  </React.StrictMode>
-);
