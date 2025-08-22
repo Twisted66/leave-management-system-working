@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import type { User } from '@auth0/auth0-react';
 
@@ -8,7 +8,7 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
-  token: string | null; // We'll get the token from Auth0 later if needed
+  token: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     getAccessTokenSilently,
   } = useAuth0();
+
+  const [token, setToken] = useState<string | null>(null);
 
   const login = async () => {
     await loginWithRedirect();
@@ -42,6 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   };
 
+  // Update token when authentication status changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      getToken().then(setToken);
+    } else {
+      setToken(null);
+    }
+  }, [isAuthenticated]);
+
   return (
     <AuthContext.Provider value={{
       currentUser: user,
@@ -49,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout: () => logout({ logoutParams: { returnTo: window.location.origin } }),
       isLoading,
       isAuthenticated,
-      token: await getToken(), // Get token here
+      token,
     }}>
       {children}
     </AuthContext.Provider>
