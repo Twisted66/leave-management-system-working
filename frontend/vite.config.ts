@@ -35,20 +35,28 @@ export default defineConfig({
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            // Bundle all React ecosystem libraries together to prevent dependency issues
+            // Bundle ALL React-dependent libraries together to prevent dependency loading issues
             if (id.includes('react') || 
                 id.includes('react-dom') || 
                 id.includes('@radix-ui') || 
                 id.includes('@tanstack/react-query') ||
                 id.includes('react-router') ||
-                id.includes('react-day-picker')) {
+                id.includes('react-day-picker') ||
+                id.includes('lucide-react') ||
+                id.includes('class-variance-authority') ||
+                id.includes('clsx') ||
+                id.includes('tailwind-merge')) {
               return 'vendor';
             }
             // Supabase in its own chunk
             if (id.includes('@supabase')) {
               return 'supabase';
             }
-            // Other utility libraries
+            // Pure utility libraries (no React dependencies)
+            if (id.includes('date-fns')) {
+              return 'utils';
+            }
+            // Any remaining libraries
             return 'libs';
           }
         },
