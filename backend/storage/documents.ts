@@ -16,7 +16,7 @@ interface UploadDocumentResponse {
 
 // Uploads a supporting document for a leave request.
 export const uploadDocument = api<UploadDocumentRequest, UploadDocumentResponse>(
-  { expose: true, method: "POST", path: "/documents/upload" },
+  { expose: true, method: "POST", path: "/leave-documents/upload" },
   async (req) => {
     // Decode base64 file data
     const fileBuffer = Buffer.from(req.fileData, 'base64');
@@ -50,7 +50,7 @@ interface GetDocumentResponse {
 
 // Generates a download URL for a document.
 export const getDocument = api<GetDocumentParams, GetDocumentResponse>(
-  { expose: true, method: "GET", path: "/documents/:documentId" },
+  { expose: true, method: "GET", path: "/leave-documents/:documentId" },
   async ({ documentId }) => {
     // Generate signed download URL (valid for 1 hour)
     const { url } = await documentsBucket.signedDownloadUrl(documentId, { ttl: 3600 });

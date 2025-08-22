@@ -14,7 +14,7 @@ interface CreateDocumentRequest {
 
 // Creates a new company document record.
 export const createDocument = api<CreateDocumentRequest, CompanyDocument>(
-  { expose: true, method: "POST", path: "/documents", auth: true },
+  { expose: true, method: "POST", path: "/company-documents", auth: true },
   async (req) => {
     const auth = getAuthData()!;
     
@@ -59,7 +59,7 @@ interface ListDocumentsResponse {
 
 // Retrieves all company documents.
 export const listDocuments = api<ListDocumentsParams, ListDocumentsResponse>(
-  { expose: true, method: "GET", path: "/documents", auth: true },
+  { expose: true, method: "GET", path: "/company-documents", auth: true },
   async (params) => {
     const auth = getAuthData()!;
     
@@ -109,7 +109,7 @@ interface UpdateDocumentRequest {
 
 // Updates a company document.
 export const updateDocument = api<UpdateDocumentRequest, CompanyDocument>(
-  { expose: true, method: "PUT", path: "/documents/:id", auth: true },
+  { expose: true, method: "PUT", path: "/company-documents/:id", auth: true },
   async (req) => {
     const auth = getAuthData()!;
     
@@ -179,7 +179,7 @@ interface DeleteDocumentParams {
 
 // Deletes a company document.
 export const deleteDocument = api<DeleteDocumentParams, void>(
-  { expose: true, method: "DELETE", path: "/documents/:id", auth: true },
+  { expose: true, method: "DELETE", path: "/company-documents/:id", auth: true },
   async ({ id }) => {
     const auth = getAuthData()!;
     
@@ -198,7 +198,7 @@ interface ExpiringDocumentsResponse {
 
 // Retrieves documents that are expiring within the next 30 days.
 export const getExpiringDocuments = api<void, ExpiringDocumentsResponse>(
-  { expose: true, method: "GET", path: "/documents/expiring", auth: true },
+  { expose: true, method: "GET", path: "/company-documents/expiring", auth: true },
   async () => {
     const auth = getAuthData()!;
     
