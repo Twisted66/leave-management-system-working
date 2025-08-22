@@ -52,4 +52,5 @@ export default defineConfig({
     // Ensure environment variables are properly defined
     __DEV__: process.env.NODE_ENV !== 'production',
   },
+  envDir: '.',
 })
