@@ -6,15 +6,6 @@ import type { Employee } from "./types";
 import { userCache, CacheKeys } from "./cache";
 import * as jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
-import { Request, Response, NextFunction } from 'express';
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthData;
-    }
-  }
-}
 
 // Auth0 configuration secrets
 const auth0Domain = secret("Auth0Domain");
