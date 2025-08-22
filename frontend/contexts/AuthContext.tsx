@@ -30,7 +30,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getToken = async () => {
     if (isAuthenticated) {
       try {
-        const accessToken = await getAccessTokenSilently();
+        const accessToken = await getAccessTokenSilently({
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        });
         return accessToken;
       } catch (error) {
         console.error("Error getting access token:", error);
@@ -47,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout: () => logout({ logoutParams: { returnTo: window.location.origin } }),
       isLoading,
       isAuthenticated,
-      token: null, // Placeholder, will be updated if needed
+      token: await getToken(), // Get token here
     }}>
       {children}
     </AuthContext.Provider>
