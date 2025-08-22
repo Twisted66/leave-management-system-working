@@ -1,3 +1,5 @@
+// Type definitions for the leave management system
+
 export interface Employee {
   id: number;
   email: string;
