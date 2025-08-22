@@ -281,15 +281,19 @@ export const getSystemHealth = api<void, SystemHealthResponse>(
       throw APIError.permissionDenied("Access denied. HR role required.");
     }
 
-    const checks = [];
+    const checks: Array<{
+      name: string;
+      status: 'pass' | 'fail';
+      message: string;
+    }> = [];
     let overallStatus: 'healthy' | 'warning' | 'error' = 'healthy';
 
     try {
       // Database connectivity check
       await leaveDB.queryRow`SELECT 1`;
-      checks.push({ name: 'Database', status: 'pass' as const, message: 'Database connection healthy' });
+      checks.push({ name: 'Database', status: 'pass', message: 'Database connection healthy' });
     } catch (error) {
-      checks.push({ name: 'Database', status: 'fail' as const, message: 'Database connection failed' });
+      checks.push({ name: 'Database', status: 'fail', message: 'Database connection failed' });
       overallStatus = 'error';
     }
 
@@ -297,13 +301,13 @@ export const getSystemHealth = api<void, SystemHealthResponse>(
       // Admin users check
       const adminCount = await leaveDB.queryRow<{ count: number }>`SELECT COUNT(*) as count FROM employees WHERE role = 'hr'`;
       if (adminCount && adminCount.count > 0) {
-        checks.push({ name: 'Admin Users', status: 'pass' as const, message: `${adminCount.count} admin user(s) configured` });
+        checks.push({ name: 'Admin Users', status: 'pass', message: `${adminCount.count} admin user(s) configured` });
       } else {
-        checks.push({ name: 'Admin Users', status: 'fail' as const, message: 'No admin users found' });
+        checks.push({ name: 'Admin Users', status: 'fail', message: 'No admin users found' });
         overallStatus = 'error';
       }
     } catch (error) {
-      checks.push({ name: 'Admin Users', status: 'fail' as const, message: 'Failed to check admin users' });
+      checks.push({ name: 'Admin Users', status: 'fail', message: 'Failed to check admin users' });
       overallStatus = 'error';
     }
 
@@ -311,13 +315,13 @@ export const getSystemHealth = api<void, SystemHealthResponse>(
       // Leave types check
       const leaveTypesCount = await leaveDB.queryRow<{ count: number }>`SELECT COUNT(*) as count FROM leave_types`;
       if (leaveTypesCount && leaveTypesCount.count > 0) {
-        checks.push({ name: 'Leave Types', status: 'pass' as const, message: `${leaveTypesCount.count} leave type(s) configured` });
+        checks.push({ name: 'Leave Types', status: 'pass', message: `${leaveTypesCount.count} leave type(s) configured` });
       } else {
-        checks.push({ name: 'Leave Types', status: 'fail' as const, message: 'No leave types configured' });
+        checks.push({ name: 'Leave Types', status: 'fail', message: 'No leave types configured' });
         if (overallStatus === 'healthy') overallStatus = 'warning';
       }
     } catch (error) {
-      checks.push({ name: 'Leave Types', status: 'fail' as const, message: 'Failed to check leave types' });
+      checks.push({ name: 'Leave Types', status: 'fail', message: 'Failed to check leave types' });
       if (overallStatus === 'healthy') overallStatus = 'warning';
     }
 
