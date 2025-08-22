@@ -5,7 +5,7 @@
 		"lib": ["ES2022"],
 		"target": "ES2022",
 		"module": "ES2022",
-		"types": ["node", "@types/express", "@types/jsonwebtoken", "@types/jwks-rsa"],
+		"types": ["node"],
 		"paths": {
 			"~encore/*": ["./encore.gen/*"]
 		},
