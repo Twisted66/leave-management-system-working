@@ -3,6 +3,7 @@ import { authHandler } from "encore.dev/auth";
 import { secret } from "encore.dev/config";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
+import { userCache, CacheKeys } from "./cache";
 import * as jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 import { Request, Response, NextFunction } from 'express';
@@ -19,14 +20,16 @@ declare global {
 const auth0Domain = secret("Auth0Domain");
 const auth0Audience = secret("Auth0Audience");
 
-// JWKS client for fetching Auth0 public keys
+// JWKS client for fetching Auth0 public keys - PRODUCTION OPTIMIZED
 const jwksClientInstance = jwksClient({
   jwksUri: `https://${auth0Domain()}/.well-known/jwks.json`,
   requestHeaders: {},
-  timeout: 30000,
+  timeout: 5000, // Reduced from 30s to 5s for production
   cache: true,
-  cacheMaxEntries: 5,
-  cacheMaxAge: 600000,
+  cacheMaxEntries: 20, // Increased for better scaling
+  cacheMaxAge: 3600000, // 1 hour cache (increased from 10 minutes)
+  rateLimit: true,
+  jwksRequestsPerMinute: 10, // Rate limiting for production
 });
 
 interface AuthParams {
@@ -129,14 +132,40 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         return undefined;
       }
 
-      // Get or create employee in database
-      const employee = await leaveDB.queryRow<{id: number, email: string, role: string, auth0Sub: string}>`
-        INSERT INTO employees (email, name, role, auth0_sub)
-        VALUES (${decoded.email || ''}, ${decoded.name || ''}, 'employee', ${decoded.sub})
-        ON CONFLICT (auth0_sub) DO UPDATE
-        SET email = EXCLUDED.email, name = EXCLUDED.name
-        RETURNING id, email, role, auth0_sub as "auth0Sub"
-      `;
+      // Check cache first
+      let employee = userCache.get(CacheKeys.userByAuth0Sub(decoded.sub));
+      
+      if (!employee) {
+        // Get or create employee in database
+        const dbEmployee = await leaveDB.queryRow<{id: number, email: string, role: string, auth0Sub: string}>`
+          INSERT INTO employees (email, name, role, auth0_sub)
+          VALUES (${decoded.email || ''}, ${decoded.name || ''}, 'employee', ${decoded.sub})
+          ON CONFLICT (auth0_sub) DO UPDATE
+          SET email = EXCLUDED.email, name = EXCLUDED.name
+          RETURNING id, email, role, auth0_sub as "auth0Sub"
+        `;
+
+        if (!dbEmployee) {
+          throw new Error('Failed to create or update employee');
+        }
+
+        // Convert to Employee type and cache
+        employee = {
+          id: dbEmployee.id,
+          email: dbEmployee.email,
+          name: decoded.name || dbEmployee.email,
+          department: 'General', // Default department
+          role: dbEmployee.role as 'employee' | 'manager' | 'hr',
+          managerId: null,
+          profileImageUrl: null,
+          createdAt: new Date(),
+          auth0Sub: dbEmployee.auth0Sub
+        };
+
+        // Cache the user
+        userCache.set(CacheKeys.userByAuth0Sub(decoded.sub), employee);
+        userCache.set(CacheKeys.userById(employee.id), employee);
+      }
 
       if (!employee) {
         throw new Error('Failed to create or update employee');
@@ -146,19 +175,25 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       req.user = {
         userID: employee.id.toString(),
         email: employee.email,
-        role: (employee.role || 'employee') as 'employee' | 'manager' | 'hr',
+        role: employee.role,
         auth0Sub: employee.auth0Sub
       };
 
       next();
     } catch (error) {
       console.error('Authentication error:', error);
-      res.status(401).json({ error: 'Invalid or expired token' });
+      const errorMessage = process.env.NODE_ENV === 'production' 
+        ? 'Authentication failed' 
+        : 'Invalid or expired token';
+      res.status(401).json({ error: errorMessage });
       return undefined;
     }
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Authentication failed'
+      : 'Internal server error';
+    res.status(500).json({ error: errorMessage });
     return undefined;
   }
 };
@@ -202,14 +237,40 @@ export const auth = authHandler(
         throw APIError.unauthenticated('Invalid token: missing sub claim');
       }
 
-      // Get or create employee in database
-      const employee = await leaveDB.queryRow<{id: number, email: string, role: string, auth0Sub: string}>`
-        INSERT INTO employees (email, name, role, auth0_sub)
-        VALUES (${decoded.email || ''}, ${decoded.name || ''}, 'employee', ${decoded.sub})
-        ON CONFLICT (auth0_sub) DO UPDATE
-        SET email = EXCLUDED.email, name = EXCLUDED.name
-        RETURNING id, email, role, auth0_sub as "auth0Sub"
-      `;
+      // Check cache first
+      let employee = userCache.get(CacheKeys.userByAuth0Sub(decoded.sub));
+      
+      if (!employee) {
+        // Get or create employee in database
+        const dbEmployee = await leaveDB.queryRow<{id: number, email: string, role: string, auth0Sub: string}>`
+          INSERT INTO employees (email, name, role, auth0_sub)
+          VALUES (${decoded.email || ''}, ${decoded.name || ''}, 'employee', ${decoded.sub})
+          ON CONFLICT (auth0_sub) DO UPDATE
+          SET email = EXCLUDED.email, name = EXCLUDED.name
+          RETURNING id, email, role, auth0_sub as "auth0Sub"
+        `;
+
+        if (!dbEmployee) {
+          throw new Error('Failed to create or update employee');
+        }
+
+        // Convert to Employee type and cache
+        employee = {
+          id: dbEmployee.id,
+          email: dbEmployee.email,
+          name: decoded.name || dbEmployee.email,
+          department: 'General',
+          role: dbEmployee.role as 'employee' | 'manager' | 'hr',
+          managerId: null,
+          profileImageUrl: null,
+          createdAt: new Date(),
+          auth0Sub: dbEmployee.auth0Sub
+        };
+
+        // Cache the user
+        userCache.set(CacheKeys.userByAuth0Sub(decoded.sub), employee);
+        userCache.set(CacheKeys.userById(employee.id), employee);
+      }
 
       if (!employee) {
         throw new Error('Failed to create or update employee');
@@ -218,12 +279,17 @@ export const auth = authHandler(
       return {
         userID: employee.id.toString(),
         email: employee.email,
-        role: (employee.role || 'employee') as 'employee' | 'manager' | 'hr',
+        role: employee.role,
         auth0Sub: employee.auth0Sub
       };
     } catch (error) {
       console.error('Authentication error:', error);
-      throw APIError.unauthenticated('Invalid or expired token');
+      // Sanitize error for production
+      if (process.env.NODE_ENV === 'production') {
+        throw APIError.unauthenticated('Authentication failed');
+      } else {
+        throw APIError.unauthenticated('Invalid or expired token');
+      }
     }
   }
 );

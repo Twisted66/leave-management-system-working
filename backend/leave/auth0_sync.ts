@@ -1,7 +1,12 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
+import { secret } from "encore.dev/config";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
+import * as crypto from "crypto";
+
+// Auth0 webhook secret for signature verification
+const auth0WebhookSecret = secret("Auth0WebhookSecret");
 
 /**
  * Auth0 User Synchronization Endpoints
@@ -252,8 +257,41 @@ export const bulkSyncUsers = api<BulkSyncRequest, BulkSyncResponse>(
 );
 
 /**
+ * Verifies Auth0 webhook signature for security
+ */
+function verifyWebhookSignature(body: string, signature: string, timestamp: string): boolean {
+  try {
+    const payload = `${timestamp}.${body}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', auth0WebhookSecret())
+      .update(payload)
+      .digest('hex');
+    
+    // Extract signature from header (format: "t=timestamp,v1=signature")
+    const signatureParts = signature.split(',');
+    const webhookSignature = signatureParts.find(part => part.startsWith('v1='))?.split('=')[1];
+    
+    if (!webhookSignature) {
+      return false;
+    }
+    
+    // Use timing-safe comparison to prevent timing attacks
+    return crypto.timingSafeEqual(
+      Buffer.from(expectedSignature, 'hex'),
+      Buffer.from(webhookSignature, 'hex')
+    );
+  } catch (error) {
+    console.error('Webhook signature verification failed:', error);
+    return false;
+  }
+}
+
+/**
  * Webhook endpoint for Auth0 to notify about user changes
  * Configure this in Auth0 Dashboard under Monitoring > Logs > Log Streams
+ * 
+ * SECURITY: This endpoint now requires signature verification
+ * Set Auth0WebhookSecret in your Encore secrets
  */
 interface Auth0WebhookEvent {
   type: string;
@@ -270,9 +308,34 @@ interface Auth0WebhookEvent {
   };
 }
 
+interface WebhookHeaders {
+  "auth0-signature"?: string;
+  "auth0-timestamp"?: string;
+}
+
 export const auth0Webhook = api<Auth0WebhookEvent, void>(
-  { expose: true, method: "POST", path: "/auth0/webhook" },
-  async (event) => {
+  { expose: true, method: "POST", path: "/auth0/webhook", auth: false },
+  async (event, { headers }) => {
+    // Verify webhook signature for security
+    const signature = (headers as WebhookHeaders)["auth0-signature"];
+    const timestamp = (headers as WebhookHeaders)["auth0-timestamp"];
+    
+    if (!signature || !timestamp) {
+      throw APIError.unauthenticated("Missing webhook signature or timestamp");
+    }
+    
+    const body = JSON.stringify(event);
+    if (!verifyWebhookSignature(body, signature, timestamp)) {
+      throw APIError.unauthenticated("Invalid webhook signature");
+    }
+    
+    // Verify timestamp to prevent replay attacks (5 minute window)
+    const now = Math.floor(Date.now() / 1000);
+    const webhookTime = parseInt(timestamp);
+    if (Math.abs(now - webhookTime) > 300) {
+      throw APIError.unauthenticated("Webhook timestamp too old");
+    }
+    
     // Handle different Auth0 events
     switch (event.type) {
       case 'ss': // Successful login
@@ -288,7 +351,9 @@ export const auth0Webhook = api<Auth0WebhookEvent, void>(
               managerId: event.user.app_metadata?.manager_id
             });
           } catch (error) {
-            console.error('Failed to sync user from webhook:', error);
+            // Sanitize error for production
+            console.error('Webhook user sync failed:', error);
+            throw APIError.internal("User synchronization failed");
           }
         }
         break;
@@ -302,13 +367,14 @@ export const auth0Webhook = api<Auth0WebhookEvent, void>(
               WHERE auth0_sub = ${event.user_id}
             `;
           } catch (error) {
-            console.error('Failed to handle user deletion:', error);
+            console.error('Webhook user deletion failed:', error);
+            throw APIError.internal("User deletion failed");
           }
         }
         break;
       
       default:
-        // Ignore other event types
+        // Ignore other event types silently
         break;
     }
   }

@@ -1,0 +1,58 @@
+Infrastructure Resources
+Encore Cloud
+
+Encore Compute
+Encore Cloudeuw1
+Ready
+
+Configuration
+vCPUs
+Memory (MiB)
+
+API Gateways (1)
+
+api-gateway
+
+Services (3)
+
+leave
+
+storage
+
+frontend
+
+leave-management-system-99ki
+aws-eu-central-1
+Ready
+
+Configuration
+History Retention (Sec)
+
+Databases (1)
+
+leave
+
+Neon Endpoint
+
+ep-delicate-resonance-a2thrax6
+aws-eu-central-1
+Ready
+
+Configuration
+Type
+PoolerSuspend Timeout (Sec)Min Num vCPUsMax Num vCPUs
+
+leave-management-system-99ki-staging-private-b15ad36d
+Encore Cloudeuw1
+Ready
+
+Configuration
+Versioning
+
+Buckets (3)
+
+profile-images
+
+leave-documents
+
+company-documentss
