@@ -50,7 +50,7 @@ interface GetCompanyDocumentResponse {
 
 // Generates a download URL for a company document.
 export const getCompanyDocument = api<GetCompanyDocumentParams, GetCompanyDocumentResponse>(
-  { expose: true, method: "GET", path: "/company-documents/:filePath" },
+  { expose: true, method: "GET", path: "/company-documents/file/:filePath" },
   async ({ filePath }) => {
     // Generate signed download URL (valid for 1 hour)
     const { url } = await companyDocumentsBucket.signedDownloadUrl(filePath, { ttl: 3600 });

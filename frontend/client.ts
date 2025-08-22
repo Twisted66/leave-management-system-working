@@ -593,7 +593,7 @@ export namespace storage {
          */
         public async getCompanyDocument(params: { filePath: string }): Promise<ResponseType<typeof api_storage_company_documents_getCompanyDocument>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/company-documents/${encodeURIComponent(params.filePath)}`, {method: "GET", body: undefined})
+            const resp = await this.baseClient.callTypedAPI(`/company-documents/file/${encodeURIComponent(params.filePath)}`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_storage_company_documents_getCompanyDocument>
         }
 
