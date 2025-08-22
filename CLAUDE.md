@@ -10,6 +10,8 @@ This is a leave management system built with Encore.dev (backend) and React + Vi
 
 ### Development
 
+**Prerequisites**: Ensure Encore CLI and bun are installed (see DEVELOPMENT.md)
+
 Start the backend (Encore):
 ```bash
 cd backend
@@ -19,9 +21,11 @@ encore run
 Start the frontend:
 ```bash
 cd frontend
-npm install  # or bun install
-npx vite dev
+bun install  # Project uses bun as package manager
+bun run dev  # or npx vite dev
 ```
+
+**Note**: This is a monorepo using bun workspaces. The root package.json defines workspaces for both backend and frontend.
 
 ### Frontend Client Generation
 
@@ -38,8 +42,10 @@ This generates the frontend client that provides type-safe API calls to the back
 Build frontend for production:
 ```bash
 cd backend
-npm run build  # This builds frontend and places it in backend/frontend/dist
+bun run build  # This builds frontend and places it in backend/frontend/dist
 ```
+
+**Note**: Build script runs from backend directory but executes `cd ../frontend && bun install && vite build --outDir=../backend/frontend/dist`
 
 ### Deployment
 
@@ -94,6 +100,7 @@ encore build docker
 - **State Management**: TanStack Query for server state, React Context for auth/user state
 - **Routing**: React Router v7
 - **Build Tool**: Vite
+- **Package Manager**: bun (specified in package.json)
 
 #### Key Components:
 - Authentication contexts (AuthContext, UserContext)
@@ -118,10 +125,12 @@ encore build docker
 
 ### File Structure Patterns
 
-- Backend services use Encore.dev patterns with `encore.service.ts` files
-- Frontend uses absolute imports with `@/` alias pointing to frontend root
-- Generated client code is auto-generated and should not be manually edited
-- Database migrations are numbered and must be run in sequence
+- **Monorepo Structure**: Root package.json defines workspaces for backend and frontend
+- **Backend services**: Use Encore.dev patterns with `encore.service.ts` files
+- **Frontend imports**: Uses absolute imports with `@/` alias pointing to frontend root, `~backend/client` for generated client, `~backend` for backend directory
+- **Generated client**: `frontend/client.ts` is auto-generated from backend API - DO NOT edit manually
+- **Database migrations**: Numbered sequentially in `backend/leave/migrations/` - must be run in order
+- **Package Manager**: Project consistently uses bun throughout (packageManager field in package.json)
 
 ### Type Safety
 
@@ -144,15 +153,18 @@ encore build docker
 3. Test migrations locally before deploying
 
 ### API Development
-1. Add new endpoints in appropriate service files
-2. Regenerate frontend client: `encore gen client --target leap`
-3. Update TypeScript types in `types.ts` as needed
+1. Add new endpoints in appropriate service files (`leave/`, `storage/`)
+2. Update TypeScript types in `backend/leave/types.ts` as needed
+3. Regenerate frontend client: `encore gen client --target leap`
+4. **Important**: Generated client code replaces `frontend/client.ts` - never edit this file manually
 
 ### Frontend Development
-1. Use existing UI components from `components/ui/`
-2. Follow established patterns for API calls using generated client
-3. Implement proper error handling and loading states
-4. Ensure responsive design with Tailwind CSS
+1. Use existing UI components from `components/ui/` (Radix UI + Tailwind CSS)
+2. Follow established patterns for API calls using generated client (`~backend/client`)
+3. Implement proper error handling and loading states with TanStack Query
+4. Ensure responsive design with Tailwind CSS v4
+5. Use bun for package management (`bun install`, `bun add`, etc.)
+6. Component structure: Pages in `pages/`, reusable components in `components/`, contexts in `contexts/`
 
 ### Authentication
 - Use Auth0 for new features
@@ -164,20 +176,28 @@ encore build docker
 - Implement proper file validation and security
 - Handle file download URLs through storage service endpoints
 
-## API Routes (Updated)
+## Key API Endpoints
 
-### Company Documents (HR only)
-- `POST /company-documents` - Create company document
-- `GET /company-documents` - List company documents
-- `PUT /company-documents/:id` - Update company document
-- `DELETE /company-documents/:id` - Delete company document
-- `GET /company-documents/expiring` - Get expiring documents
-- `POST /company-documents/upload` - Upload company document file
-- `GET /company-documents/:filePath` - Download company document
+**Note**: Complete API routes are auto-generated in `frontend/client.ts`. Main services:
 
-### Leave Request Documents
-- `POST /leave-documents/upload` - Upload leave request document
-- `GET /leave-documents/:documentId` - Download leave request document
+### Leave Management (`backend/leave/`)
+- **Leave Requests**: CRUD operations, approval workflows, employee/manager views
+- **Leave Balances**: Balance management, allocations, usage tracking  
+- **Leave Types**: Annual leave, sick leave, etc. configuration
+- **Employees**: User management, role-based access
+- **Absence Management**: Absence records and conversion requests
+- **Reports**: Analytics and reporting endpoints
+- **Notifications**: Email notification system
+
+### Storage Services (`backend/storage/`)
+- **Documents**: Leave request document uploads/downloads
+- **Company Documents**: HR document management (policies, handbooks)
+- **Profile Images**: Employee profile image storage
+
+### Auth0 Integration
+- **Sync Endpoints**: User synchronization between Auth0 and internal database
+- **JWT Authentication**: All endpoints require valid Auth0 JWT tokens
+- **Role-based Access**: employee, manager, hr hierarchical permissions
 
 ## Auth0 Configuration Required
 

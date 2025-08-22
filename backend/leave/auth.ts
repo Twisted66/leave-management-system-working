@@ -4,7 +4,7 @@ import { secret } from "encore.dev/config";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
 import * as jwt from "jsonwebtoken";
-import * as jwksClient from "jwks-rsa";
+import jwksClient from "jwks-rsa";
 
 // Auth0 configuration secrets
 const auth0Domain = secret("Auth0Domain");
