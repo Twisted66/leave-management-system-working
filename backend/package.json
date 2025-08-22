@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "bun",
   "scripts": {
-    "build": "cd ../frontend && bun install && vite build --outDir=../backend/frontend/dist"
+    "build": "cd ../frontend && rm -rf node_modules/.vite && rm -rf dist && bun install && vite build --outDir=../backend/frontend/dist"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
