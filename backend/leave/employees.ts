@@ -4,6 +4,10 @@ import { leaveDB } from "./db";
 import type { Employee } from "./types";
 import * as bcrypt from "bcrypt";
 
+// Import admin and cache modules to ensure they get compiled and endpoints are exposed
+import "./admin";
+import "./cache";
+
 interface ListEmployeesResponse {
   employees: Employee[];
 }
