@@ -20,7 +20,7 @@ export default defineConfig({
   server: {
     headers: {
       // Security headers for development
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.auth0.com; connect-src 'self' ws: wss: https://*.auth0.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https:; frame-src https://*.auth0.com;",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' ws: wss: https://*.supabase.co; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https:;",
       'X-Frame-Options': 'DENY',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -35,15 +35,20 @@ export default defineConfig({
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
+            // Bundle all React ecosystem libraries together to prevent dependency issues
+            if (id.includes('react') || 
+                id.includes('react-dom') || 
+                id.includes('@radix-ui') || 
+                id.includes('@tanstack/react-query') ||
+                id.includes('react-router') ||
+                id.includes('react-day-picker')) {
               return 'vendor';
             }
-            if (id.includes('@auth0/auth0-react')) {
-              return 'auth0';
+            // Supabase in its own chunk
+            if (id.includes('@supabase')) {
+              return 'supabase';
             }
-            if (id.includes('@radix-ui')) {
-              return 'ui';
-            }
+            // Other utility libraries
             return 'libs';
           }
         },
