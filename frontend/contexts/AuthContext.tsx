@@ -1,104 +1,53 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import backend from '~backend/client';
-import type { Employee } from '~backend/leave/types';
+import { createContext, useContext, ReactNode } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import type { User } from '@auth0/auth0-react';
 
 interface AuthContextType {
-  currentUser: Employee | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  currentUser: User | undefined;
+  login: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
-  token: string | null;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  name: string;
-  department: string;
-  role?: 'employee' | 'manager' | 'hr';
-  managerId?: number;
+  token: string | null; // We'll get the token from Auth0 later if needed
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<Employee | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+    loginWithRedirect,
+    logout,
+    getAccessTokenSilently,
+  } = useAuth0();
 
-  useEffect(() => {
-    // Check for existing token on app load
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
-      setToken(storedToken);
-      validateToken(storedToken);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
+  const login = async () => {
+    await loginWithRedirect();
+  };
 
-  const validateToken = async (tokenToValidate: string) => {
-    try {
-      // Decode JWT to get user info (basic validation)
-      const payload = JSON.parse(atob(tokenToValidate.split('.')[1]));
-      
-      // Check if token is expired
-      if (payload.exp * 1000 < Date.now()) {
-        throw new Error('Token expired');
+  const getToken = async () => {
+    if (isAuthenticated) {
+      try {
+        const accessToken = await getAccessTokenSilently();
+        return accessToken;
+      } catch (error) {
+        console.error("Error getting access token:", error);
+        return null;
       }
-
-      // Get user data from the token payload
-      const userData = await backend.leave.getEmployee({ id: parseInt(payload.userId) });
-      setCurrentUser(userData);
-    } catch (error) {
-      console.error('Token validation failed:', error);
-      localStorage.removeItem('authToken');
-      setToken(null);
-      setCurrentUser(null);
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await backend.leave.login({ email, password });
-      setCurrentUser(response.employee);
-      setToken(response.token);
-      localStorage.setItem('authToken', response.token);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const register = async (data: RegisterData) => {
-    try {
-      const response = await backend.leave.register(data);
-      setCurrentUser(response.employee);
-      setToken(response.token);
-      localStorage.setItem('authToken', response.token);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const logout = () => {
-    setCurrentUser(null);
-    setToken(null);
-    localStorage.removeItem('authToken');
+    return null;
   };
 
   return (
     <AuthContext.Provider value={{
-      currentUser,
+      currentUser: user,
       login,
-      register,
-      logout,
+      logout: () => logout({ logoutParams: { returnTo: window.location.origin } }),
       isLoading,
-      isAuthenticated: !!currentUser,
-      token
+      isAuthenticated,
+      token: null, // Placeholder, will be updated if needed
     }}>
       {children}
     </AuthContext.Provider>

@@ -25,7 +25,8 @@
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.8.1",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.12",
+    "@auth0/auth0-react": "^2.2.4"
   },
   "devDependencies": {
     "@tailwindcss/oxide": "^4.1.12",
