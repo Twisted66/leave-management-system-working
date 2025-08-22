@@ -1,66 +1,75 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
-import type { User } from '@auth0/auth0-react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '../main';
 
 interface AuthContextType {
-  currentUser: User | undefined;
-  login: () => Promise<void>;
-  logout: () => void;
+  currentUser: User | null;
+  session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   token: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const {
-    user,
-    isAuthenticated,
-    isLoading,
-    loginWithRedirect,
-    logout,
-    getAccessTokenSilently,
-  } = useAuth0();
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [token, setToken] = useState<string | null>(null);
-
-  const login = async () => {
-    await loginWithRedirect();
-  };
-
-  const getToken = async () => {
-    if (isAuthenticated) {
-      try {
-        const accessToken = await getAccessTokenSilently({
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        });
-        return accessToken;
-      } catch (error) {
-        console.error("Error getting access token:", error);
-        return null;
-      }
-    }
-    return null;
-  };
-
-  // Update token when authentication status changes
   useEffect(() => {
-    if (isAuthenticated) {
-      getToken().then(setToken);
-    } else {
-      setToken(null);
-    }
-  }, [isAuthenticated]);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setCurrentUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setCurrentUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) throw error;
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <AuthContext.Provider value={{
-      currentUser: user,
-      login,
-      logout: () => logout({ logoutParams: { returnTo: window.location.origin } }),
+      currentUser,
+      session,
       isLoading,
-      isAuthenticated,
-      token,
+      isAuthenticated: !!currentUser,
+      token: session?.access_token ?? null,
+      login,
+      logout,
+      signUp,
     }}>
       {children}
     </AuthContext.Provider>

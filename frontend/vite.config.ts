@@ -9,6 +9,8 @@ export default defineConfig({
       '@': path.resolve(__dirname),
       '~backend/client': path.resolve(__dirname, './client'),
       '~backend': path.resolve(__dirname, '../backend'),
+      'react': path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },
   },
   plugins: [
