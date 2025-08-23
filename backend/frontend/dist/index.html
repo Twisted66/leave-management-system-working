@@ -58,23 +58,49 @@
         document.addEventListener('DOMContentLoaded', async function() {
           try {
             // Remove static tags first to prevent conflicts
-            const scripts = document.querySelectorAll('script[src*="/frontend/assets/"]');
+            const scripts = document.querySelectorAll('script[src*="/assets/"]');
             scripts.forEach(script => script.remove());
-            const links = document.querySelectorAll('link[href*="/frontend/assets/"]');
+            const links = document.querySelectorAll('link[href*="/assets/"]');
             links.forEach(link => link.remove());
             
             console.log('Loading application assets...');
             
-            // Load CSS first
-            await loadCSS('/frontend/assets/index-DcdqvTDb.css');
+            // Get the actual asset filenames from the generated script/link tags
+            const assetElements = {
+              css: [],
+              js: []
+            };
             
-            // Load vendor modules first (dependencies)
-            await loadScript('/frontend/assets/vendor-Hu-ULBDt.js', true);
-            await loadScript('/frontend/assets/utils-DWHcN4y_.js', true);
-            await loadScript('/frontend/assets/supabase-De4MVlsz.js', true);
+            // Find all asset references in the HTML
+            document.querySelectorAll('script[src*="/assets/"]').forEach(script => {
+              const filename = script.src.split('/').pop();
+              if (filename) assetElements.js.push(filename);
+            });
             
-            // Load main application script last
-            await loadScript('/frontend/assets/index-CMKV6piE.js', true);
+            document.querySelectorAll('link[href*="/assets/"]').forEach(link => {
+              const filename = link.href.split('/').pop();
+              if (filename && link.rel === 'stylesheet') assetElements.css.push(filename);
+            });
+            
+            // Load CSS assets
+            for (const filename of assetElements.css) {
+              await loadCSS(`/frontend/assets/${filename}`);
+            }
+            
+            // Load JS assets (dependencies first, then main)
+            const jsFiles = assetElements.js.sort((a, b) => {
+              if (a.includes('vendor')) return -1;
+              if (b.includes('vendor')) return 1;
+              if (a.includes('utils')) return -1;
+              if (b.includes('utils')) return 1;
+              if (a.includes('supabase')) return -1;
+              if (b.includes('supabase')) return 1;
+              return 0;
+            });
+            
+            for (const filename of jsFiles) {
+              await loadScript(`/frontend/assets/${filename}`, true);
+            }
             
             console.log('All assets loaded successfully!');
           } catch (error) {
@@ -100,6 +126,6 @@
     <link rel="stylesheet" crossorigin href="/frontend/assets/index-DcdqvTDb.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>
