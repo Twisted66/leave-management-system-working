@@ -103,7 +103,7 @@ export default function CreateLeaveRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] dark:bg-gray-800 dark:border-gray-700">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto dark:bg-gray-800 dark:border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-gray-900 dark:text-white">Submit Leave Request</DialogTitle>
         </DialogHeader>
@@ -127,7 +127,7 @@ export default function CreateLeaveRequestDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <Label className="text-gray-900 dark:text-white">Start Date</Label>
               <Popover>
@@ -143,7 +143,7 @@ export default function CreateLeaveRequestDialog({
                     {formData.startDate ? format(formData.startDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 dark:bg-gray-700 dark:border-gray-600">
+                <PopoverContent className="w-auto p-0 z-50 dark:bg-gray-700 dark:border-gray-600">
                   <Calendar
                     mode="single"
                     selected={formData.startDate}
@@ -171,7 +171,7 @@ export default function CreateLeaveRequestDialog({
                     {formData.endDate ? format(formData.endDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 dark:bg-gray-700 dark:border-gray-600">
+                <PopoverContent className="w-auto p-0 z-50 dark:bg-gray-700 dark:border-gray-600">
                   <Calendar
                     mode="single"
                     selected={formData.endDate}
@@ -236,7 +236,7 @@ export default function CreateLeaveRequestDialog({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6">
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
