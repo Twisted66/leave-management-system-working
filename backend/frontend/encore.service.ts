@@ -4,14 +4,14 @@ import { Service } from "encore.dev/service";
 
 export default new Service("frontend");
 
-// Serve static assets directly without notFound fallback for assets
+// Serve static assets with explicit MIME type handling
 export const assets = api.static({
   path: "/frontend/assets/*path", 
   expose: true,
   dir: "dist/assets",
 });
 
-// Serve other static files with fallback for HTML
+// Serve frontend app with SPA fallback
 export const frontend = api.static({
   path: "/frontend/*path", 
   expose: true,
@@ -20,11 +20,11 @@ export const frontend = api.static({
   notFoundStatus: 200,
 });
 
-// Serve root fallback for SPA routing
+// Serve root with SPA fallback for direct navigation
 export const root = api.static({
   path: "/!path", 
   expose: true,
   dir: "dist",
-  notFound: "dist/index.html",
+  notFound: "dist/index.html", 
   notFoundStatus: 200,
 });
