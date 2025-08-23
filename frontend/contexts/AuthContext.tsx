@@ -27,18 +27,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fetch employee data after authentication
   const fetchEmployeeData = async (user: User, token: string) => {
     try {
-      // Try to get user by Supabase ID first
-      const response = await client.auth.getUser(user.id, {
+      // Set the authentication header for the client
+      client.baseClient.getAuthData = () => ({
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      // Try to get user by Supabase ID first
+      const response = await client.getUser({ supabaseUserId: user.id });
       
       if (response.employee) {
         setCurrentUser(response.employee);
       } else {
         // If no employee record exists, user needs to be set up in the system
+        console.log('No employee record found for user:', user.id);
         setCurrentUser(null);
       }
     } catch (error) {
+      console.error('Failed to fetch employee data:', error);
       setCurrentUser(null);
     }
   };

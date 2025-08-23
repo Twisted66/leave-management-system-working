@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { supabase } from '../../main';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function LoginForm() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('admin@example.com'); // Pre-fill with test admin
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [message, setMessage] = useState('');
+  const { isLoading: authLoading } = useAuth();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setMessage('');
 
     try {
       if (isSignUp) {
@@ -19,17 +23,21 @@ export function LoginForm() {
           password,
         });
         if (error) throw error;
-        alert('Check your email for verification link!');
+        setMessage('✅ Check your email for verification link!');
       } else {
         // Sign in
+        setMessage('🔄 Signing in...');
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        setMessage('✅ Login successful! Loading dashboard...');
+        // The AuthContext will handle the redirect
       }
     } catch (error: any) {
-      alert(error.message);
+      setMessage(`❌ ${error.message}`);
+      console.error('Authentication error:', error);
     } finally {
       setLoading(false);
     }
@@ -77,6 +85,18 @@ export function LoginForm() {
               />
             </div>
           </div>
+
+          {message && (
+            <div className={`text-sm p-3 rounded-md ${
+              message.startsWith('❌') 
+                ? 'bg-red-50 text-red-700 border border-red-200' 
+                : message.startsWith('✅') 
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : 'bg-blue-50 text-blue-700 border border-blue-200'
+            }`}>
+              {message}
+            </div>
+          )}
 
           <div>
             <button
