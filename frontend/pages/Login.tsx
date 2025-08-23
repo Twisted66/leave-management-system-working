@@ -75,7 +75,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
+                  placeholder="Enter your email"
                   required
                 />
               </div>
@@ -87,7 +87,7 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="admin123"
+                  placeholder="Enter your password"
                   required
                 />
               </div>
@@ -113,20 +113,9 @@ export default function Login() {
               </button>
             </div>
 
-            {/* Quick test credentials */}
-            <div className="mt-4 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300">
-              <p><strong>Test credentials:</strong></p>
-              <p>Email: admin@example.com</p>
-              <p>Password: admin123</p>
-            </div>
           </CardContent>
         </Card>
 
-        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-          <p>
-            🎉 Now powered by Supabase - SO MUCH SIMPLER than Auth0!
-          </p>
-        </div>
       </div>
     </div>
   );

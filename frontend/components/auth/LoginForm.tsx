@@ -99,12 +99,6 @@ export function LoginForm() {
             </button>
           </div>
 
-          {/* Quick Admin Account Creation */}
-          <div className="text-center text-xs text-gray-500 space-y-2">
-            <p>For testing:</p>
-            <p>Email: admin@example.com</p>
-            <p>Password: admin123</p>
-          </div>
         </form>
       </div>
     </div>
