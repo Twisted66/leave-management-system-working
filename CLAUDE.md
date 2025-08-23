@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a leave management system built with Encore.dev (backend) and React + Vite (frontend). The system manages employee leave requests, balances, documents, and includes Auth0 integration for authentication.
+This is a leave management system built with Encore.dev (backend) and React + Vite (frontend). The system manages employee leave requests, balances, documents, and now uses Supabase for authentication (migrated from Auth0).
 
 ## Commands
 
 ### Development
 
-**Prerequisites**: Ensure Encore CLI and bun are installed (see DEVELOPMENT.md)
+**Prerequisites**: Ensure Encore CLI and npm are installed (see DEVELOPMENT.md)
 
 Start the backend (Encore):
 ```bash
@@ -21,11 +21,11 @@ encore run
 Start the frontend:
 ```bash
 cd frontend
-bun install  # Project uses bun as package manager
-bun run dev  # or npx vite dev
+npm install
+npx vite dev
 ```
 
-**Note**: This is a monorepo using bun workspaces. The root package.json defines workspaces for both backend and frontend.
+**Important**: This project uses npm workspaces (not bun). The root package.json defines workspaces for both backend and frontend, with packageManager set to "npm@10.5.0".
 
 ### Frontend Client Generation
 
@@ -42,10 +42,10 @@ This generates the frontend client that provides type-safe API calls to the back
 Build frontend for production:
 ```bash
 cd backend
-bun run build  # This builds frontend and places it in backend/frontend/dist
+npm run build  # This builds frontend and places it in backend/frontend/dist
 ```
 
-**Note**: Build script runs from backend directory but executes `cd ../frontend && bun install && vite build --outDir=../backend/frontend/dist`
+**Note**: Build script runs from backend directory but executes `cd ../frontend && rm -rf node_modules && rm -rf dist && rm -rf .vite && npm install --no-cache && npx vite build --outDir=../backend/frontend/dist --emptyOutDir`
 
 ### Deployment
 
@@ -71,8 +71,8 @@ encore build docker
 
 #### Service Structure:
 - `leave/` - Core leave management service
-  - `auth.ts` - Authentication (deprecated, Auth0 is primary)
-  - `auth0_sync.ts` - Auth0 integration and user synchronization
+  - `auth.ts` - Legacy authentication (deprecated)
+  - `supabase_sync.ts` - Supabase integration and user synchronization
   - `employees.ts` - Employee management
   - `leave_requests.ts` - Leave request workflows
   - `leave_balances.ts` - Leave balance management
@@ -81,6 +81,8 @@ encore build docker
   - `documents.ts` - Document management
   - `reports.ts` - Reporting functionality
   - `notifications.ts` - Email notifications
+  - `admin.ts` - Administrative functions
+  - `cache.ts` - Caching layer
   - `db.ts` - Database configuration
   - `types.ts` - Shared TypeScript interfaces
 
@@ -95,12 +97,12 @@ encore build docker
 
 ### Frontend (React + Vite)
 
-- **Framework**: React 19 with TypeScript
+- **Framework**: React 18 with TypeScript
 - **Styling**: Tailwind CSS v4 + Radix UI components
 - **State Management**: TanStack Query for server state, React Context for auth/user state
 - **Routing**: React Router v7
-- **Build Tool**: Vite
-- **Package Manager**: bun (specified in package.json)
+- **Build Tool**: Vite 6.3.5 with base: '/frontend/' configuration
+- **Package Manager**: npm (specified in package.json)
 
 #### Key Components:
 - Authentication contexts (AuthContext, UserContext)
@@ -119,7 +121,7 @@ encore build docker
 
 ### Authentication
 
-- **Primary**: Auth0 integration with JWT tokens
+- **Primary**: Supabase authentication with JWT tokens
 - **Legacy**: Built-in email/password auth (deprecated)
 - **Roles**: employee, manager, hr with hierarchical permissions
 
@@ -130,7 +132,7 @@ encore build docker
 - **Frontend imports**: Uses absolute imports with `@/` alias pointing to frontend root, `~backend/client` for generated client, `~backend` for backend directory
 - **Generated client**: `frontend/client.ts` is auto-generated from backend API - DO NOT edit manually
 - **Database migrations**: Numbered sequentially in `backend/leave/migrations/` - must be run in order
-- **Package Manager**: Project consistently uses bun throughout (packageManager field in package.json)
+- **Package Manager**: Project consistently uses npm throughout (packageManager field in package.json)
 
 ### Type Safety
 
@@ -141,9 +143,16 @@ encore build docker
 ### State Management
 
 - Server state: TanStack Query with generated client
-- Auth state: React Context with Auth0 integration
+- Auth state: React Context with Supabase integration
 - User preferences: React Context with localStorage persistence
 - Theme: React Context for dark/light mode
+
+### Static Asset Serving
+
+Critical for deployment: The frontend is served through Encore's static file serving:
+- **Assets Route**: `/frontend/assets/*path` → serves files directly from `dist/assets/` with correct MIME types
+- **Frontend Route**: `/frontend/*path` → serves files from `dist/` with HTML fallback
+- **Root Fallback**: `/!path` → SPA routing fallback to `dist/index.html`
 
 ## Development Guidelines
 
@@ -163,11 +172,11 @@ encore build docker
 2. Follow established patterns for API calls using generated client (`~backend/client`)
 3. Implement proper error handling and loading states with TanStack Query
 4. Ensure responsive design with Tailwind CSS v4
-5. Use bun for package management (`bun install`, `bun add`, etc.)
+5. Use npm for package management (`npm install`, `npm add`, etc.)
 6. Component structure: Pages in `pages/`, reusable components in `components/`, contexts in `contexts/`
 
 ### Authentication
-- Use Auth0 for new features
+- Use Supabase for new features
 - Implement proper role-based access control
 - Handle JWT token refresh and expiration
 
@@ -194,41 +203,16 @@ encore build docker
 - **Company Documents**: HR document management (policies, handbooks)
 - **Profile Images**: Employee profile image storage
 
-### Auth0 Integration
-- **Sync Endpoints**: User synchronization between Auth0 and internal database
-- **JWT Authentication**: All endpoints require valid Auth0 JWT tokens
+### Supabase Integration
+- **Sync Endpoints**: User synchronization between Supabase and internal database
+- **JWT Authentication**: All endpoints require valid Supabase JWT tokens
 - **Role-based Access**: employee, manager, hr hierarchical permissions
 
-## Auth0 Configuration Required
+## Supabase Configuration
 
-To fix deployment issues, ensure proper Auth0 setup:
-
-1. **Create Auth0 Application**: SPA for frontend, API for backend
-2. **Set Audience**: Must match the `Auth0Audience` secret in Encore
-3. **Configure Domains**: Set allowed callback/logout URLs
-4. **Custom Claims**: Add user metadata to tokens
-
-### Auth0 CLI Setup Commands:
+Environment variables required for frontend (in `.env.development`):
 ```bash
-./auth0 login --domain <your-tenant>.auth0.com --client-id <client-id> --client-secret <client-secret>
-./auth0 apis list  # Check current API audience
-./auth0 apps list  # Check SPA configuration
-```
-
-### Required Encore Secrets:
-```bash
-encore secret set Auth0Domain <your-tenant>.auth0.com
-encore secret set Auth0Audience <your-api-identifier>
-```
-
-### Auth0 Custom Claims Rule:
-```javascript
-function addCustomClaims(user, context, callback) {
-  const namespace = 'https://yourapp.com/';
-  context.idToken[namespace + 'role'] = user.app_metadata.role || 'employee';
-  context.idToken[namespace + 'employee_id'] = user.app_metadata.employee_id;
-  context.accessToken[namespace + 'role'] = user.app_metadata.role || 'employee';
-  context.accessToken[namespace + 'employee_id'] = user.app_metadata.employee_id;
-  callback(null, user, context);
-}
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_CLIENT_TARGET=http://localhost:4000
 ```
