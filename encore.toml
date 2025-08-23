@@ -1,0 +1,9 @@
+[build]
+# Ensure frontend assets are included in production build
+copy = [
+    { src = "backend/frontend/dist", dest = "frontend/dist" }
+]
+
+[runtime]
+# Configure runtime for proper static file serving
+static_assets = true
