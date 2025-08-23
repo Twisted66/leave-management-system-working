@@ -19,7 +19,15 @@ CREATE INDEX idx_employees_supabase_id ON employees(supabase_id);
 -- Update column comment
 COMMENT ON COLUMN employees.supabase_id IS 'Supabase user identifier (sub claim from JWT token)';
 
--- Update existing test users with proper Supabase UUID format IDs
-UPDATE employees SET supabase_id = '12345678-1234-1234-1234-123456789abc' WHERE email = 'admin@example.com';
-UPDATE employees SET supabase_id = '12345678-1234-1234-1234-123456789def' WHERE email = 'manager@example.com';  
-UPDATE employees SET supabase_id = '12345678-1234-1234-1234-123456789ghi' WHERE email = 'employee@example.com';
+-- Update existing test users with real Supabase user IDs
+UPDATE employees SET supabase_id = 'eb49b337-d813-421b-ba5a-d7519e89b7f4' WHERE email = 'admin@example.com';
+UPDATE employees SET supabase_id = 'df743da1-7071-4611-ae5e-d4183d2efe16' WHERE email = 'test.employee@gmail.com';
+
+-- Update admin email to match what we created in Supabase
+UPDATE employees SET email = 'admin@example.com' WHERE supabase_id = 'eb49b337-d813-421b-ba5a-d7519e89b7f4';
+
+-- Add the new employee user if it doesn't exist
+INSERT INTO employees (email, name, department, role, supabase_id, created_at) 
+VALUES ('test.employee@gmail.com', 'Test Employee', 'Operations', 'employee', 'df743da1-7071-4611-ae5e-d4183d2efe16', NOW())
+ON CONFLICT (supabase_id) DO UPDATE 
+SET email = EXCLUDED.email, name = EXCLUDED.name;

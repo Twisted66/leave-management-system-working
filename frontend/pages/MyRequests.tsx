@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, AlertTriangle } from 'lucide-react';
-import backend from '~backend/client';
+import backend from '../lib/client';
 import { useUser } from '../contexts/UserContext';
 import CreateLeaveRequestDialog from '../components/CreateLeaveRequestDialog';
 import CreateAbsenceConversionDialog from '../components/CreateAbsenceConversionDialog';

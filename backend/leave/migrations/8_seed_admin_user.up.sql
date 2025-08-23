@@ -21,7 +21,7 @@ INSERT INTO employees (
   'System Administrator', 
   'IT', 
   'hr',
-  '12345678-1234-1234-1234-123456789abc',
+  'eb49b337-d813-421b-ba5a-d7519e89b7f4',
   NOW()
 ) ON CONFLICT (email) DO NOTHING;
 
@@ -34,29 +34,12 @@ INSERT INTO employees (
   auth0_sub,
   created_at
 ) VALUES (
-  'manager@example.com',
-  'Test Manager', 
-  'Operations', 
-  'manager',
-  '12345678-1234-1234-1234-123456789def',
-  NOW()
-) ON CONFLICT (email) DO NOTHING;
-
--- Create a test employee user
-INSERT INTO employees (
-  email, 
-  name, 
-  department, 
-  role, 
-  auth0_sub,
-  manager_id,
-  created_at
-) VALUES (
-  'employee@example.com',
+  'test.employee@gmail.com',
   'Test Employee', 
   'Operations', 
   'employee',
-  '12345678-1234-1234-1234-123456789ghi',
-  (SELECT id FROM employees WHERE email = 'manager@example.com'),
+  'df743da1-7071-4611-ae5e-d4183d2efe16',
   NOW()
 ) ON CONFLICT (email) DO NOTHING;
+
+-- Additional users can be added here

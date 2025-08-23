@@ -3,7 +3,7 @@ import { supabase } from '../../main';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function LoginForm() {
-  const [email, setEmail] = useState('admin@example.com'); // Pre-fill with test admin
+  const [email, setEmail] = useState(''); // No pre-filled email for production
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);

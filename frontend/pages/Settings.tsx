@@ -13,7 +13,7 @@ import { User, Bell, Shield, Palette, Save, Camera, Upload } from 'lucide-react'
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '@/components/ui/use-toast';
-import backend from '~backend/client';
+import backend from '../lib/client';
 
 export default function Settings() {
   const { currentUser } = useUser();

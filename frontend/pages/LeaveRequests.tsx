@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, X, Plus } from 'lucide-react';
-import backend from '~backend/client';
+import backend from '../lib/client';
 import { useUser } from '../contexts/UserContext';
 import ApprovalDialog from '../components/ApprovalDialog';
 import AbsenceConversionApprovalDialog from '../components/AbsenceConversionApprovalDialog';

@@ -1,5 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
-import backend from '~backend/client';
+import backend from '../lib/client';
 
 // Returns the backend client with authentication configured
 export function useBackend() {
