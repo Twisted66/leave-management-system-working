@@ -1,20 +1,20 @@
--- First, make password_hash nullable to support Supabase authentication
+-- First, make password_hash nullable to support Auth0/Supabase authentication
 ALTER TABLE employees ALTER COLUMN password_hash DROP NOT NULL;
 
--- Add a constraint to ensure either password_hash or supabase_id is present (will be updated in migration 9)
+-- Add a constraint to ensure either password_hash or auth0_sub is present
 ALTER TABLE employees ADD CONSTRAINT employees_auth_method_check 
 CHECK (
-  (password_hash IS NOT NULL AND supabase_id IS NULL) OR 
-  (password_hash IS NULL AND supabase_id IS NOT NULL)
+  (password_hash IS NOT NULL AND auth0_sub IS NULL) OR 
+  (password_hash IS NULL AND auth0_sub IS NOT NULL)
 );
 
--- Create default admin user for system setup with proper Supabase UUID format
+-- Create default admin user for system setup
 INSERT INTO employees (
   email, 
   name, 
   department, 
   role, 
-  supabase_id,
+  auth0_sub,
   created_at
 ) VALUES (
   'admin@example.com',
@@ -25,13 +25,13 @@ INSERT INTO employees (
   NOW()
 ) ON CONFLICT (email) DO NOTHING;
 
--- Create a test manager user with proper Supabase UUID format
+-- Create a test manager user
 INSERT INTO employees (
   email, 
   name, 
   department, 
   role, 
-  supabase_id,
+  auth0_sub,
   created_at
 ) VALUES (
   'manager@example.com',
@@ -42,13 +42,13 @@ INSERT INTO employees (
   NOW()
 ) ON CONFLICT (email) DO NOTHING;
 
--- Create a test employee user with proper Supabase UUID format
+-- Create a test employee user
 INSERT INTO employees (
   email, 
   name, 
   department, 
   role, 
-  supabase_id,
+  auth0_sub,
   manager_id,
   created_at
 ) VALUES (
