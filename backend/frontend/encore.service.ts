@@ -4,11 +4,20 @@ import { Service } from "encore.dev/service";
 
 export default new Service("frontend");
 
-// Use CDN-enabled HTML file as fallback
+// Serve static files with proper MIME types and fallback
 export const frontend = api.static({
   path: "/frontend/*path", 
   expose: true,
   dir: "dist",
-  notFound: "dist/index-cdn.html",
+  notFound: "dist/index.html",
+  notFoundStatus: 200,
+});
+
+// Serve root fallback for SPA routing
+export const root = api.static({
+  path: "/!path", 
+  expose: true,
+  dir: "dist",
+  notFound: "dist/index.html",
   notFoundStatus: 200,
 });

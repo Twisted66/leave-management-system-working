@@ -4,23 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Leave Management System</title>
-    <!-- Force deployment refresh: 2025-08-23-11:25 -->
     <script>
       // Dynamic asset loading for production MIME type fix
       if (window.location.hostname.includes('encr.app')) {
-        // If loading from Encore, try CDN fallback
+        // Set CDN base for asset loading
         const cdnBase = 'https://cdn.jsdelivr.net/gh/Twisted66/leave-management-system@main/backend/frontend/dist/assets/';
+        window.__VITE_ASSET_BASE__ = cdnBase;
         
-        // Override failed script loads
+        // Override failed script/CSS loads with CDN fallback
         window.addEventListener('error', function(e) {
-          if (e.target && e.target.tagName === 'SCRIPT' && e.target.src) {
-            const filename = e.target.src.split('/').pop();
-            console.log('Falling back to CDN for:', filename);
-            const newScript = document.createElement('script');
-            newScript.type = e.target.type;
-            newScript.crossOrigin = 'anonymous';
-            newScript.src = cdnBase + filename;
-            document.head.appendChild(newScript);
+          if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+            console.warn('Asset failed to load, trying CDN fallback:', e.target.src || e.target.href);
+            
+            if (e.target.tagName === 'SCRIPT' && e.target.src) {
+              const filename = e.target.src.split('/').pop();
+              const newScript = document.createElement('script');
+              newScript.type = e.target.type;
+              newScript.crossOrigin = 'anonymous';
+              newScript.src = cdnBase + filename;
+              document.head.appendChild(newScript);
+            } else if (e.target.tagName === 'LINK' && e.target.href && e.target.rel === 'stylesheet') {
+              const filename = e.target.href.split('/').pop();
+              const newLink = document.createElement('link');
+              newLink.rel = 'stylesheet';
+              newLink.crossOrigin = 'anonymous';
+              newLink.href = cdnBase + filename;
+              document.head.appendChild(newLink);
+            }
           }
         }, true);
       }
