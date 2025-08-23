@@ -1,7 +1,9 @@
 [build]
-# Minimal build configuration to restore application
-copy = []
+# Build frontend and copy to deployment
+copy = [
+    "backend/frontend/dist"
+]
 
 [runtime]
-# Basic runtime configuration
-static_assets = false
+# Enable static asset serving
+static_assets = true
