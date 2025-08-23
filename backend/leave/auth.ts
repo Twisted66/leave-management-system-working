@@ -67,13 +67,17 @@ export const auth = authHandler(
       let employee = userCache.get(CacheKeys.userByAuth0Sub(decoded.sub));
       
       if (!employee) {
-        // Get or create employee in database
-        const dbEmployee = await leaveDB.queryRow<{id: number, email: string, role: string, auth0Sub: string}>`
-          INSERT INTO employees (email, name, role, auth0_sub)
-          VALUES (${decoded.email}, ${decoded.user_metadata?.name || decoded.email}, 'employee', ${decoded.sub})
+        // Get or create employee in database with proper role assignment
+        const defaultRole = decoded.email === 'admin@example.com' ? 'hr' : 'employee';
+        const defaultName = decoded.user_metadata?.name || decoded.email?.split('@')[0] || 'User';
+        const defaultDepartment = decoded.email === 'admin@example.com' ? 'IT' : 'General';
+        
+        const dbEmployee = await leaveDB.queryRow<{id: number, email: string, role: string, auth0Sub: string, department: string, name: string}>`
+          INSERT INTO employees (email, name, department, role, auth0_sub)
+          VALUES (${decoded.email}, ${defaultName}, ${defaultDepartment}, ${defaultRole}, ${decoded.sub})
           ON CONFLICT (auth0_sub) DO UPDATE
           SET email = EXCLUDED.email, name = EXCLUDED.name
-          RETURNING id, email, role, auth0_sub as "auth0Sub"
+          RETURNING id, email, name, department, role, auth0_sub as "auth0Sub"
         `;
 
         if (!dbEmployee) {
@@ -84,8 +88,8 @@ export const auth = authHandler(
         employee = {
           id: dbEmployee.id,
           email: dbEmployee.email,
-          name: decoded.user_metadata?.name || dbEmployee.email,
-          department: 'General',
+          name: dbEmployee.name,
+          department: dbEmployee.department,
           role: dbEmployee.role as 'employee' | 'manager' | 'hr',
           managerId: undefined,
           profileImageUrl: undefined,
