@@ -39,7 +39,7 @@ export const syncUser = api<SyncUserRequest, SyncUserResponse>(
     try {
       // Check if user already exists
       const existingEmployee = await leaveDB.queryRow<Employee>`
-        SELECT * FROM employees WHERE auth0_sub = ${req.supabaseUserId}
+        SELECT * FROM employees WHERE supabase_id = ${req.supabaseUserId}
       `;
 
       let employee: Employee;
@@ -56,7 +56,7 @@ export const syncUser = api<SyncUserRequest, SyncUserResponse>(
           managerId: number | null;
           profileImageUrl: string | null;
           createdAt: Date;
-          auth0Sub: string;
+          supabaseId: string;
         }>`
           UPDATE employees 
           SET email = ${req.email}, 
@@ -64,12 +64,12 @@ export const syncUser = api<SyncUserRequest, SyncUserResponse>(
               department = ${req.department},
               role = ${req.role || 'employee'},
               manager_id = ${req.managerId || null}
-          WHERE auth0_sub = ${req.supabaseUserId}
+          WHERE supabase_id = ${req.supabaseUserId}
           RETURNING id, email, name, department, role, 
                     manager_id as "managerId", 
                     profile_image_url as "profileImageUrl",
                     created_at as "createdAt",
-                    auth0_sub as "auth0Sub"
+                    supabase_id as "supabaseId"
         `;
 
         if (!updatedEmployee) {
@@ -93,15 +93,15 @@ export const syncUser = api<SyncUserRequest, SyncUserResponse>(
           managerId: number | null;
           profileImageUrl: string | null;
           createdAt: Date;
-          auth0Sub: string;
+          supabaseId: string;
         }>`
-          INSERT INTO employees (email, name, department, role, manager_id, auth0_sub)
+          INSERT INTO employees (email, name, department, role, manager_id, supabase_id)
           VALUES (${req.email}, ${req.name}, ${req.department}, ${req.role || 'employee'}, ${req.managerId || null}, ${req.supabaseUserId})
           RETURNING id, email, name, department, role, 
                     manager_id as "managerId", 
                     profile_image_url as "profileImageUrl",
                     created_at as "createdAt",
-                    auth0_sub as "auth0Sub"
+                    supabase_id as "supabaseId"
         `;
 
         if (!newEmployee) {
@@ -151,15 +151,15 @@ export const getUser = api<GetUserRequest, GetUserResponse>(
         managerId: number | null;
         profileImageUrl: string | null;
         createdAt: Date;
-        auth0Sub: string;
+        supabaseId: string;
       }>`
         SELECT id, email, name, department, role, 
                manager_id as "managerId", 
                profile_image_url as "profileImageUrl",
                created_at as "createdAt",
-               auth0_sub as "auth0Sub"
+               supabase_id as "supabaseId"
         FROM employees 
-        WHERE auth0_sub = ${req.supabaseUserId}
+        WHERE supabase_id = ${req.supabaseUserId}
       `;
 
       if (!employee) {

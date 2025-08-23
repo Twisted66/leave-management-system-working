@@ -17,7 +17,7 @@ interface CreateAdminRequest {
   email: string;
   name: string;
   department: string;
-  auth0Sub: string;
+  supabaseId: string;
   initSecret: string; // Required for initial admin creation
 }
 
@@ -49,8 +49,8 @@ export const createInitialAdmin = api<CreateAdminRequest, CreateAdminResponse>(
 
     // Create the initial admin user
     const admin = await leaveDB.queryRow<Employee>`
-      INSERT INTO employees (auth0_sub, email, name, department, role)
-      VALUES (${req.auth0Sub}, ${req.email}, ${req.name}, ${req.department}, 'hr')
+      INSERT INTO employees (supabase_id, email, name, department, role)
+      VALUES (${req.supabaseId}, ${req.email}, ${req.name}, ${req.department}, 'hr')
       RETURNING 
         id,
         email,
@@ -60,7 +60,7 @@ export const createInitialAdmin = api<CreateAdminRequest, CreateAdminResponse>(
         manager_id as "managerId",
         profile_image_url as "profileImageUrl",
         created_at as "createdAt",
-        auth0_sub as "auth0Sub"
+        supabase_id as "supabaseId"
     `;
 
     if (!admin) {
@@ -95,7 +95,7 @@ interface CreateAdminUserRequest {
   email: string;
   name: string;
   department: string;
-  auth0Sub: string;
+  supabaseId: string;
 }
 
 /**
@@ -113,17 +113,17 @@ export const createAdminUser = api<CreateAdminUserRequest, CreateAdminResponse>(
 
     // Check if user already exists
     const existingUser = await leaveDB.queryRow<Employee>`
-      SELECT id FROM employees WHERE email = ${req.email} OR auth0_sub = ${req.auth0Sub}
+      SELECT id FROM employees WHERE email = ${req.email} OR supabase_id = ${req.supabaseId}
     `;
 
     if (existingUser) {
-      throw APIError.invalidArgument("User with this email or Auth0 ID already exists");
+      throw APIError.invalidArgument("User with this email or Supabase ID already exists");
     }
 
     // Create the admin user
     const admin = await leaveDB.queryRow<Employee>`
-      INSERT INTO employees (auth0_sub, email, name, department, role)
-      VALUES (${req.auth0Sub}, ${req.email}, ${req.name}, ${req.department}, 'hr')
+      INSERT INTO employees (supabase_id, email, name, department, role)
+      VALUES (${req.supabaseId}, ${req.email}, ${req.name}, ${req.department}, 'hr')
       RETURNING 
         id,
         email,
@@ -133,7 +133,7 @@ export const createAdminUser = api<CreateAdminUserRequest, CreateAdminResponse>(
         manager_id as "managerId",
         profile_image_url as "profileImageUrl",
         created_at as "createdAt",
-        auth0_sub as "auth0Sub"
+        supabase_id as "supabaseId"
     `;
 
     if (!admin) {
@@ -193,7 +193,7 @@ export const updateUserRole = api<UpdateUserRoleRequest, UpdateUserRoleResponse>
         manager_id as "managerId",
         profile_image_url as "profileImageUrl",
         created_at as "createdAt",
-        auth0_sub as "auth0Sub"
+        supabase_id as "supabaseId"
       FROM employees
       WHERE id = ${req.employeeId}
     `;

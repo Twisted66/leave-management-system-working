@@ -9,7 +9,7 @@ export interface Employee {
   managerId?: number;
   profileImageUrl?: string;
   createdAt: Date;
-  auth0Sub?: string; // Auth0 subject identifier
+  supabaseId?: string; // Supabase user identifier
 }
 
 export interface LeaveType {

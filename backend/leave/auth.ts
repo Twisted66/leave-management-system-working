@@ -72,12 +72,12 @@ export const auth = authHandler(
         const defaultName = decoded.user_metadata?.name || decoded.email?.split('@')[0] || 'User';
         const defaultDepartment = decoded.email === 'admin@example.com' ? 'IT' : 'General';
         
-        const dbEmployee = await leaveDB.queryRow<{id: number, email: string, role: string, auth0Sub: string, department: string, name: string}>`
-          INSERT INTO employees (email, name, department, role, auth0_sub)
+        const dbEmployee = await leaveDB.queryRow<{id: number, email: string, role: string, supabaseId: string, department: string, name: string}>`
+          INSERT INTO employees (email, name, department, role, supabase_id)
           VALUES (${decoded.email}, ${defaultName}, ${defaultDepartment}, ${defaultRole}, ${decoded.sub})
-          ON CONFLICT (auth0_sub) DO UPDATE
+          ON CONFLICT (supabase_id) DO UPDATE
           SET email = EXCLUDED.email, name = EXCLUDED.name
-          RETURNING id, email, name, department, role, auth0_sub as "auth0Sub"
+          RETURNING id, email, name, department, role, supabase_id as "supabaseId"
         `;
 
         if (!dbEmployee) {
@@ -94,7 +94,7 @@ export const auth = authHandler(
           managerId: undefined,
           profileImageUrl: undefined,
           createdAt: new Date(),
-          auth0Sub: dbEmployee.auth0Sub
+          supabaseId: dbEmployee.supabaseId
         };
 
         // Cache the user
