@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Leave Management System</title>
+    <script>
+      // Dynamic asset loading for production MIME type fix
+      if (window.location.hostname.includes('encr.app')) {
+        const cdnBase = 'https://cdn.jsdelivr.net/gh/Twisted66/leave-management-system@main/backend/frontend/dist/assets/';
+        window.__VITE_ASSET_BASE__ = cdnBase;
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

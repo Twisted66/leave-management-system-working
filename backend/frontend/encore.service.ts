@@ -4,11 +4,11 @@ import { Service } from "encore.dev/service";
 
 export default new Service("frontend");
 
-// Single static configuration that prioritizes exact asset matches
+// Use CDN-enabled HTML file as fallback
 export const frontend = api.static({
   path: "/frontend/*path", 
   expose: true,
   dir: "dist",
-  notFound: "dist/index.html",
+  notFound: "dist/index-cdn.html",
   notFoundStatus: 200,
 });

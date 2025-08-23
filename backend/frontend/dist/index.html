@@ -4,12 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Leave Management System</title>
-    <!-- Cache bust: 2025-08-23-10:40 -->
-    <script type="module" crossorigin src="https://cdn.jsdelivr.net/gh/Twisted66/leave-management-system@main/backend/frontend/dist/assets/index-CMKV6piE.js"></script>
-    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/gh/Twisted66/leave-management-system@main/backend/frontend/dist/assets/supabase-De4MVlsz.js">
-    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/gh/Twisted66/leave-management-system@main/backend/frontend/dist/assets/utils-DWHcN4y_.js">
-    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/gh/Twisted66/leave-management-system@main/backend/frontend/dist/assets/vendor-Hu-ULBDt.js">
-    <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/Twisted66/leave-management-system@main/backend/frontend/dist/assets/index-DcdqvTDb.css">
+    <script>
+      // Dynamic asset loading for production MIME type fix
+      if (window.location.hostname.includes('encr.app')) {
+        const cdnBase = 'https://cdn.jsdelivr.net/gh/Twisted66/leave-management-system@main/backend/frontend/dist/assets/';
+        window.__VITE_ASSET_BASE__ = cdnBase;
+      }
+    </script>
+    <script type="module" crossorigin src="/frontend/assets/index-CMKV6piE.js"></script>
+    <link rel="modulepreload" crossorigin href="/frontend/assets/supabase-De4MVlsz.js">
+    <link rel="modulepreload" crossorigin href="/frontend/assets/utils-DWHcN4y_.js">
+    <link rel="modulepreload" crossorigin href="/frontend/assets/vendor-Hu-ULBDt.js">
+    <link rel="stylesheet" crossorigin href="/frontend/assets/index-DcdqvTDb.css">
   </head>
   <body>
     <div id="root"></div>
