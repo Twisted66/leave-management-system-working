@@ -51,7 +51,7 @@ export function LoginForm() {
             {isSignUp ? 'Create Account' : 'Sign In'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Leave Management System
+            Leave Management System - v2.0
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleAuth}>
