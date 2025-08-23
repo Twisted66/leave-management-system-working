@@ -36,11 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(response.employee);
       } else {
         // If no employee record exists, user needs to be set up in the system
-        console.warn('User authenticated but no employee record found');
         setCurrentUser(null);
       }
     } catch (error) {
-      console.error('Failed to fetch employee data:', error);
       setCurrentUser(null);
     }
   };

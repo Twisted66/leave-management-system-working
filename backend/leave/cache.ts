@@ -71,10 +71,10 @@ class UserCache {
   }
 
   /**
-   * Invalidates all entries for a user (by auth0Sub or userID)
+   * Invalidates all entries for a user (by external ID or userID)
    */
-  invalidateUser(auth0Sub: string, userID?: string): void {
-    this.invalidate(`auth0:${auth0Sub}`);
+  invalidateUser(externalId: string, userID?: string): void {
+    this.invalidate(`external:${externalId}`);
     if (userID) {
       this.invalidate(`user:${userID}`);
     }
@@ -137,7 +137,7 @@ setInterval(() => {
  * Cache helper functions
  */
 export const CacheKeys = {
-  userByAuth0Sub: (auth0Sub: string) => `auth0:${auth0Sub}`,
+  userByExternalId: (externalId: string) => `external:${externalId}`,
   userById: (id: string | number) => `user:${id}`,
   userByEmail: (email: string) => `email:${email}`,
 } as const;

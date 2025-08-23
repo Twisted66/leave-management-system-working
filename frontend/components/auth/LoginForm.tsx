@@ -27,7 +27,6 @@ export function LoginForm() {
           password,
         });
         if (error) throw error;
-        console.log('User signed in:', data.user);
       }
     } catch (error: any) {
       alert(error.message);

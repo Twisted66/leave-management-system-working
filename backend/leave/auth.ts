@@ -64,7 +64,7 @@ export const auth = authHandler(
       }
 
       // Check cache first
-      let employee = userCache.get(CacheKeys.userByAuth0Sub(decoded.sub));
+      let employee = userCache.get(CacheKeys.userByExternalId(decoded.sub));
       
       if (!employee) {
         // Get or create employee in database with proper role assignment
@@ -98,7 +98,7 @@ export const auth = authHandler(
         };
 
         // Cache the user
-        userCache.set(CacheKeys.userByAuth0Sub(decoded.sub), employee);
+        userCache.set(CacheKeys.userByExternalId(decoded.sub), employee);
         userCache.set(CacheKeys.userById(employee.id), employee);
       }
 
@@ -113,7 +113,6 @@ export const auth = authHandler(
         supabaseUserId: decoded.sub
       };
     } catch (error) {
-      console.error('Authentication error:', error);
       throw APIError.unauthenticated('Authentication failed');
     }
   }

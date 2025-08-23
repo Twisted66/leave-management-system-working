@@ -15,7 +15,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const setCurrentUser = (user: Employee | null) => {
     // This is now handled by the AuthContext
-    console.warn('setCurrentUser is deprecated, use login/logout from AuthContext instead');
   };
 
   return (

@@ -122,7 +122,6 @@ export const syncUser = api<SyncUserRequest, SyncUserResponse>(
         created
       };
     } catch (error) {
-      console.error('User sync error:', error);
       throw APIError.internal('Failed to sync user data');
     }
   }
@@ -176,7 +175,6 @@ export const getUser = api<GetUserRequest, GetUserResponse>(
         }
       };
     } catch (error) {
-      console.error('Get user error:', error);
       throw APIError.internal('Failed to get user data');
     }
   }

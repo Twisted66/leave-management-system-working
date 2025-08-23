@@ -38,8 +38,9 @@ export default defineConfig({
   },
   build: {
     // Production build optimizations
-    minify: process.env.NODE_ENV === 'production',
-    sourcemap: process.env.NODE_ENV !== 'production',
+    minify: 'esbuild', // Always minify for production
+    sourcemap: false, // Disable source maps in production for security
+    target: 'es2020', // Modern browser target for better optimization
     rollupOptions: {
       output: {
         manualChunks: (id) => {
