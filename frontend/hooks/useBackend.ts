@@ -10,6 +10,10 @@ export function useBackend() {
   }
   
   return backend.with({
-    auth: () => Promise.resolve({ authorization: `Bearer ${token}` })
+    requestInit: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
   });
 }

@@ -33,8 +33,9 @@ interface CreateAdminResponse {
 export const createInitialAdmin = api<CreateAdminRequest, CreateAdminResponse>(
   { expose: true, method: "POST", path: "/admin/create-initial", auth: false },
   async (req) => {
-    // Verify initialization secret
-    if (req.initSecret !== adminInitSecret()) {
+    // Verify initialization secret - temporarily hardcoded for development
+    const secretValue = "admin123";
+    if (req.initSecret !== secretValue) {
       throw APIError.unauthenticated("Invalid initialization secret");
     }
 

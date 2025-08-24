@@ -1,26 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogIn, UserPlus } from 'lucide-react';
+import { LogIn, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function Login() {
-  const { login, signUp, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-gray-900 dark:text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  // Add effect to show success message before redirect
+  useEffect(() => {
+    if (isAuthenticated && success) {
+      const timer = setTimeout(() => {
+        // The Navigate component below will handle the redirect
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, success]);
+
+  if (isAuthenticated && !success) {
+    // Show success message briefly before redirect
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <Card className="w-full max-w-md dark:bg-gray-800 dark:border-gray-700">
+          <CardContent className="p-6 text-center">
+            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-green-600 dark:text-green-400 mb-2">
+              Authentication Successful!
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Redirecting to dashboard...
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -35,14 +64,10 @@ export default function Login() {
     setError('');
 
     try {
-      if (isSignUpMode) {
-        await signUp(email, password);
-        setError('Check your email for verification link!');
-      } else {
-        await login(email, password);
-      }
+      await login(email, password);
+      setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -52,18 +77,15 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leave Management</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            {isSignUpMode ? 'Create your account' : 'Sign in to your account'}
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leave Management System</h1>
         </div>
 
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="p-6">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-                {isSignUpMode ? <UserPlus className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
-                {isSignUpMode ? 'Sign Up' : 'Sign In'}
+                <LogIn className="h-5 w-5" />
+                Sign In
               </CardTitle>
             </CardHeader>
             
@@ -99,18 +121,14 @@ export default function Login() {
               )}
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Loading...' : (isSignUpMode ? 'Sign Up' : 'Sign In')}
+                {loading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
 
             <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignUpMode(!isSignUpMode)}
-                className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400"
-              >
-                {isSignUpMode ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
-              </button>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                For account access, contact your system administrator
+              </p>
             </div>
 
           </CardContent>

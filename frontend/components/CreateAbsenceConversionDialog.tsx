@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { AbsenceRecord } from '~backend/leave/types';
+import type { leave } from '~backend/client';
+
+type AbsenceRecord = leave.AbsenceRecord;
 
 interface CreateAbsenceConversionDialogProps {
   open: boolean;

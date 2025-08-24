@@ -26,7 +26,7 @@ export default function MyRequests() {
 
   const { data: balances } = useQuery({
     queryKey: ['balances', currentUser?.id],
-    queryFn: () => currentUser ? backend.leave.getEmployeeBalances({ employeeId: currentUser.id }) : null,
+    queryFn: () => currentUser ? backend.leave.getEmployeeBalances(currentUser.id) : null,
     enabled: !!currentUser,
   });
 
@@ -99,9 +99,9 @@ export default function MyRequests() {
     }
   };
 
-  const pendingAbsences = absenceRecords?.records.filter(record => 
+  const pendingAbsences = absenceRecords?.records.filter((record: any) => 
     record.status === 'pending' && 
-    !absenceConversionRequests?.requests.some(req => req.absenceRecordId === record.id)
+    !absenceConversionRequests?.requests.some((req: any) => req.absenceRecordId === record.id)
   ) || [];
 
   if (isLoading) {
@@ -153,7 +153,7 @@ export default function MyRequests() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {balances?.balances.map((balance) => (
+            {balances?.balances.map((balance: any) => (
               <div key={balance.id} className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <h3 className="font-medium text-gray-900 dark:text-white truncate">{balance.leaveTypeName}</h3>
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{balance.availableDays}</p>
@@ -192,7 +192,7 @@ export default function MyRequests() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {requests.requests.map((request) => (
+                  {requests.requests.map((request: any) => (
                     <div key={request.id} className="border dark:border-gray-600 rounded-lg p-4">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                         <div className="min-w-0 flex-1">
@@ -248,7 +248,7 @@ export default function MyRequests() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {absenceRecords.records.map((record) => (
+                  {absenceRecords.records.map((record: any) => (
                     <div key={record.id} className="border dark:border-gray-600 rounded-lg p-4">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                         <div className="min-w-0 flex-1">
@@ -286,7 +286,7 @@ export default function MyRequests() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {absenceConversionRequests.requests.map((request) => (
+                  {absenceConversionRequests.requests.map((request: any) => (
                     <div key={request.id} className="border dark:border-gray-600 rounded-lg p-4">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                         <div className="min-w-0 flex-1">

@@ -82,7 +82,12 @@ export default function LeaveRequests() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: backend.leave.updateLeaveRequestStatus,
+    mutationFn: (data: { id: number; status: 'approved' | 'rejected'; managerComments?: string; approvedBy: number }) =>
+      backend.leave.updateLeaveRequestStatus(data.id, {
+        status: data.status,
+        managerComments: data.managerComments,
+        approvedBy: data.approvedBy
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-requests'] });
       queryClient.invalidateQueries({ queryKey: ['all-requests'] });
@@ -104,7 +109,12 @@ export default function LeaveRequests() {
   });
 
   const updateConversionStatusMutation = useMutation({
-    mutationFn: backend.leave.updateAbsenceConversionStatus,
+    mutationFn: (data: { id: number; status: 'approved' | 'rejected'; managerComments?: string; approvedBy: number }) =>
+      backend.leave.updateAbsenceConversionStatus(data.id, {
+        status: data.status,
+        managerComments: data.managerComments,
+        approvedBy: data.approvedBy
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-conversion-requests'] });
       queryClient.invalidateQueries({ queryKey: ['all-conversion-requests'] });
@@ -352,7 +362,7 @@ export default function LeaveRequests() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pendingRequests.requests.map((request) => (
+                  {pendingRequests.requests.map((request: any) => (
                     <RequestCard key={request.id} request={request} showActions={true} />
                   ))}
                 </div>
@@ -373,7 +383,7 @@ export default function LeaveRequests() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pendingConversionRequests.requests.map((request) => (
+                  {pendingConversionRequests.requests.map((request: any) => (
                     <ConversionRequestCard key={request.id} request={request} showActions={true} />
                   ))}
                 </div>
@@ -394,7 +404,7 @@ export default function LeaveRequests() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {allRequests.requests.map((request) => (
+                  {allRequests.requests.map((request: any) => (
                     <RequestCard key={request.id} request={request} />
                   ))}
                 </div>
@@ -415,7 +425,7 @@ export default function LeaveRequests() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {allConversionRequests.requests.map((request) => (
+                  {allConversionRequests.requests.map((request: any) => (
                     <ConversionRequestCard key={request.id} request={request} />
                   ))}
                 </div>
@@ -448,7 +458,7 @@ export default function LeaveRequests() {
         onOpenChange={setShowCreateAbsenceDialog}
         onSubmit={(data) => createAbsenceRecordMutation.mutate(data)}
         isLoading={createAbsenceRecordMutation.isPending}
-        employees={employees?.employees.filter(e => e.role !== 'hr') || []}
+        employees={employees?.employees.filter((e: any) => e.role !== 'hr') || []}
       />
     </div>
   );

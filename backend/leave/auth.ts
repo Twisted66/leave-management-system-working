@@ -1,13 +1,13 @@
 import { api, APIError, Header } from "encore.dev/api";
 import { authHandler } from "encore.dev/auth";
-import { secret } from "encore.dev/config";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
 import { userCache, CacheKeys } from "./cache";
 import * as jwt from "jsonwebtoken";
+import * as crypto from "crypto";
 
 interface AuthParams {
-  authorization?: Header<"Authorization">;
+  authorization: Header<"Authorization">;
 }
 
 export interface AuthData {
@@ -17,55 +17,109 @@ export interface AuthData {
   supabaseUserId: string;
 }
 
-// Supabase JWT secret for verification
-const supabaseJwtSecret = secret("SupabaseJwtSecret");
+// Supabase JWKS endpoint and key info
+const SUPABASE_PROJECT_URL = 'https://ocxijuowaqkbyhtnlxdz.supabase.co';
+const SUPABASE_JWKS_URL = `${SUPABASE_PROJECT_URL}/auth/v1/.well-known/jwks.json`;
+
+// Cache for JWKS keys
+let jwksCache: any = null;
+let jwksCacheTime: number = 0;
+const JWKS_CACHE_TTL = 3600000; // 1 hour
 
 /**
- * Validates Supabase JWT token
+ * Converts a JWK to a PEM public key.
  */
-async function validateSupabaseToken(token: string): Promise<jwt.JwtPayload> {
-  return new Promise((resolve, reject) => {
-    // For development - decode without verification to test the flow
-    try {
-      const decoded = jwt.decode(token, { complete: true });
-      if (!decoded || typeof decoded === 'string' || !decoded.payload) {
-        return reject(new Error('Invalid token structure'));
-      }
-      resolve(decoded.payload as jwt.JwtPayload);
-    } catch (err) {
-      reject(err);
-    }
-    
-    /* TODO: Use proper verification when JWT secret is configured
-    jwt.verify(token, supabaseJwtSecret(), {
-      algorithms: ['HS256']
-    }, (err, decoded) => {
-      if (err) {
-        return reject(err);
-      }
-      if (!decoded || typeof decoded === 'string') {
-        return reject(new Error('Invalid token payload'));
-      }
-      resolve(decoded as jwt.JwtPayload);
-    });
-    */
+function jwkToPem(jwk: any): string {
+  const modulus = Buffer.from(jwk.n, 'base64');
+  const exponent = Buffer.from(jwk.e, 'base64');
+
+  const pubKey = crypto.createPublicKey({
+    key: {
+      kty: 'RSA',
+      n: modulus,
+      e: exponent,
+    },
+    format: 'jwk'
   });
+
+  return pubKey.export({ type: 'pkcs1', format: 'pem' }) as string;
 }
 
+/**
+ * Fetches JWKS from Supabase, with caching.
+ */
+async function getSigningKey(kid: string): Promise<string> {
+  const now = Date.now();
+  if (!jwksCache || (now - jwksCacheTime) > JWKS_CACHE_TTL) {
+    try {
+      const response = await fetch(SUPABASE_JWKS_URL);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch JWKS: ${response.statusText}`);
+      }
+      jwksCache = await response.json();
+      jwksCacheTime = now;
+      console.log('🔑 JWKS fetched and cached successfully.');
+    } catch (error) {
+      console.error('❌ Failed to fetch JWKS:', error);
+      throw new Error('Could not fetch signing keys.');
+    }
+  }
 
+  const key = jwksCache.keys.find((k: any) => k.kid === kid);
+  if (!key) {
+    throw new Error('Signing key not found.');
+  }
 
+  return jwkToPem(key);
+}
 
+/**
+ * Validates Supabase JWT token using RS256 and JWKS.
+ */
+async function validateSupabaseToken(token: string): Promise<jwt.JwtPayload> {
+  console.log('🔍 Validating Supabase token...');
+  const decodedToken = jwt.decode(token, { complete: true });
+  if (!decodedToken || !decodedToken.header.kid) {
+    throw new Error('Invalid token or missing KID.');
+  }
 
-// Encore auth handler for Supabase
-export const auth = authHandler(
-  async (params: AuthParams): Promise<AuthData> => {
+  const kid = decodedToken.header.kid;
+  const pem = await getSigningKey(kid);
+
+  try {
+    const decoded = jwt.verify(token, pem, {
+      algorithms: ['RS256'],
+      issuer: `https://${SUPABASE_PROJECT_URL.split('//')[1]}`,
+      audience: 'authenticated',
+    }) as jwt.JwtPayload;
+
+    console.log('✅ Token verification successful');
+    if (!decoded.sub) {
+      throw new Error('Token missing required "sub" claim.');
+    }
+    return decoded;
+  } catch (err: any) {
+    console.error('❌ Token validation error:', err.message);
+    throw new Error(`Token validation failed: ${err.message}`);
+  }
+}
+
+// Encore auth handler - Back to original simple pattern
+export const authHandlerImpl = authHandler<AuthParams, AuthData>(
+  async (params) => {
+    console.log('🚀 AUTH HANDLER INVOKED! 🚀');
+    console.log('🔍 Auth params:', Object.keys(params));
+    console.log('🔍 Authorization header present:', !!params.authorization);
+    
     const authHeader = params.authorization;
     if (!authHeader) {
+      console.log('❌ No authorization header');
       throw APIError.unauthenticated('No authorization header');
     }
 
     const [scheme, token] = authHeader.split(' ');
     if (scheme.toLowerCase() !== 'bearer' || !token) {
+      console.log('❌ Invalid auth format');
       throw APIError.invalidArgument('Invalid authorization header format');
     }
 
@@ -80,59 +134,48 @@ export const auth = authHandler(
       let employee = userCache.get(CacheKeys.userByExternalId(decoded.sub));
       
       if (!employee) {
-        // Get or create employee in database with proper role assignment
-        const defaultRole = decoded.email === 'admin@example.com' ? 'hr' : 'employee';
-        const defaultName = decoded.user_metadata?.name || decoded.email?.split('@')[0] || 'User';
-        const defaultDepartment = decoded.email === 'admin@example.com' ? 'IT' : 'General';
-        
-        try {
-          const dbEmployee = await leaveDB.queryRow<{id: number, email: string, role: string, supabaseId: string, department: string, name: string}>`
-            INSERT INTO employees (email, name, department, role, supabase_id)
-            VALUES (${decoded.email}, ${defaultName}, ${defaultDepartment}, ${defaultRole}, ${decoded.sub})
-            ON CONFLICT (supabase_id) DO UPDATE
-            SET email = EXCLUDED.email, name = EXCLUDED.name
-            RETURNING id, email, name, department, role, supabase_id as "supabaseId"
-          `;
+        console.log('📄 Employee not in cache, querying database');
+        const dbEmployee = await leaveDB.queryRow<Employee & { supabaseId: string }>`
+          SELECT id, email, name, department, role, manager_id as "managerId", profile_image_url as "profileImageUrl", created_at as "createdAt", supabase_id as "supabaseId"
+          FROM employees WHERE supabase_id = ${decoded.sub}
+        `;
 
-          if (!dbEmployee) {
-            throw new Error('Failed to create or update employee');
-          }
-
-          // Convert to Employee type and cache
-          employee = {
-            id: dbEmployee.id,
-            email: dbEmployee.email,
-            name: dbEmployee.name,
-            department: dbEmployee.department,
-            role: dbEmployee.role as 'employee' | 'manager' | 'hr',
-            managerId: undefined,
-            profileImageUrl: undefined,
-            createdAt: new Date(),
-            supabaseId: dbEmployee.supabaseId
-          };
-
-          // Cache the user
-          userCache.set(CacheKeys.userByExternalId(decoded.sub), employee);
-          userCache.set(CacheKeys.userById(employee.id), employee);
-        } catch (error) {
-          console.error('Failed to create/update employee:', error);
-          throw new Error('Failed to sync user data');
+        if (!dbEmployee) {
+          console.log('❌ User not found in database');
+          throw APIError.unauthenticated('User not found in the system.');
         }
+        employee = dbEmployee;
+        userCache.set(CacheKeys.userByExternalId(decoded.sub), employee);
+        userCache.set(CacheKeys.userById(employee.id), employee);
+        console.log('✅ Employee cached');
+      } else {
+        console.log('✅ Employee found in cache');
       }
 
-      if (!employee) {
-        throw new Error('Failed to create or get employee');
-      }
-
+      console.log('✅ Auth successful for user:', employee.email);
       return {
         userID: employee.id.toString(),
         email: employee.email,
         role: employee.role,
         supabaseUserId: decoded.sub
       };
-    } catch (error) {
-      throw APIError.unauthenticated('Authentication failed');
+    } catch (error: any) {
+      console.error('❌ Authentication error:', error);
+      throw APIError.unauthenticated(`Authentication failed: ${error.message}`);
     }
+  }
+);
+
+// Test endpoint to verify auth handler is working
+export const testAuth = api<void, { message: string, user: any }>(
+  { expose: true, method: "GET", path: "/auth/test", auth: true },
+  async () => {
+    console.log('🧪 Test auth endpoint called');
+    // This should have auth data if handler worked
+    return { 
+      message: "Auth handler is working!",
+      user: "User data would be populated by auth handler"
+    };
   }
 );
 

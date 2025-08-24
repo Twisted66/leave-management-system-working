@@ -118,7 +118,7 @@ export default function Employees() {
             </div>
           ) : (
             <div className="space-y-4">
-              {employees.employees.map((employee) => (
+              {employees.employees.map((employee: any) => (
                 <div key={employee.id} className="border dark:border-gray-600 rounded-lg p-4">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                     <div className="flex-1 min-w-0">

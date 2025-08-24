@@ -1,4 +1,4 @@
-// Client configuration wrapper
+// Client configuration wrapper  
 import { Client, Environment } from '../client';
 
 // Get the correct API URL based on environment

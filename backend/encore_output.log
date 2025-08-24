@@ -1,0 +1,127 @@
+78[0J[1000D[2K[36m  ⠋ Building Encore application graph... [0m
+8[0J[1000D[2K[36m  ⠙ Building Encore application graph... [0m
+8[0J[1000D[2K[36m  ⠚ Building Encore application graph... [0m
+[1000D[2K[36m  ⠋ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠒ Building Encore application graph... [0m
+[1000D[2K[36m  ⠙ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠂ Building Encore application graph... [0m
+[1000D[2K[36m  ⠚ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠂ Building Encore application graph... [0m
+[1000D[2K[36m  ⠒ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠒ Building Encore application graph... [0m
+[1000D[2K[36m  ⠂ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠲ Building Encore application graph... [0m
+[1000D[2K[36m  ⠂ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠴ Building Encore application graph... [0m
+[1000D[2K[36m  ⠒ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠦ Building Encore application graph... [0m
+[1000D[2K[36m  ⠲ Analyzing service topology... [0m
+8[0J[1000D[2K[36m  ⠖ Building Encore application graph... [0m
+[1000D[2K[36m  ⠴ Analyzing service topology... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠋ Creating PostgreSQL database cluster... [0m
+[1000D[2K[36m  ⠋ Starting Object Storage server... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠙ Creating PostgreSQL database cluster... [0m
+[1000D[2K[36m  ⠙ Starting Object Storage server... [0m
+[1000D[2K[36m  ⠋ Fetching application secrets... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠚ Creating PostgreSQL database cluster... [0m
+[1000D[2K[36m  ⠚ Starting Object Storage server... [0m
+[1000D[2K[36m  ⠙ Fetching application secrets... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠒ Creating PostgreSQL database cluster... [0m
+[1000D[2K[36m  ⠒ Starting Object Storage server... [0m
+[1000D[2K[36m  ⠚ Fetching application secrets... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠂ Creating PostgreSQL database cluster... [0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠂ Creating PostgreSQL database cluster... [0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠒ Creating PostgreSQL database cluster... [0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠲ Creating PostgreSQL database cluster... [0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠴ Creating PostgreSQL database cluster... [0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠦ Creating PostgreSQL database cluster... [0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[36m  ⠖ Creating PostgreSQL database cluster... [0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+[1000D[2K[36m  ⠋ Running database migrations... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[32m  ✔ Creating PostgreSQL database cluster... Done![0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+[1000D[2K[36m  ⠙ Running database migrations... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[32m  ✔ Creating PostgreSQL database cluster... Done![0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+[1000D[2K[36m  ⠚ Running database migrations... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[32m  ✔ Creating PostgreSQL database cluster... Done![0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+[1000D[2K[36m  ⠒ Running database migrations... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[32m  ✔ Creating PostgreSQL database cluster... Done![0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+[1000D[2K[32m  ✔ Running database migrations... Done![0m
+[1000D[2K[36m  ⠋ Starting Encore application... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[32m  ✔ Creating PostgreSQL database cluster... Done![0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+[1000D[2K[32m  ✔ Running database migrations... Done![0m
+[1000D[2K[36m  ⠙ Starting Encore application... [0m
+8[0J[1000D[2K[32m  ✔ Building Encore application graph... Done![0m
+[1000D[2K[32m  ✔ Analyzing service topology... Done![0m
+[1000D[2K[32m  ✔ Creating PostgreSQL database cluster... Done![0m
+[1000D[2K[32m  ✔ Starting Object Storage server... Done![0m
+[1000D[2K[32m  ✔ Fetching application secrets... Done![0m
+[1000D[2K[32m  ✔ Running database migrations... Done![0m
+[1000D[2K[32m  ✔ Starting Encore application... Done![0m
+
+  Encore development server running!
+
+  Your API is running at:     [36mhttp://127.0.0.1:4000[0m
+  Development Dashboard URL:  [36mhttp://127.0.0.1:9400/leave-management-system-99ki[0m
+  MCP SSE URL:                [36mhttp://127.0.0.1:9900/sse?appID=leave-management-system-99ki[0m
+
+
+Hint: deploy your app to the cloud by running: [36mgit push encore[0m

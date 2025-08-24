@@ -36,7 +36,7 @@ function ReportsContent() {
     enabled: currentUser?.role === 'hr',
   });
 
-  const departments = [...new Set(employees?.employees.map(e => e.department) || [])];
+  const departments = [...new Set(employees?.employees.map((e: any) => e.department) || [])];
 
   const exportToCSV = () => {
     if (!leaveUsageReport?.employeeReports) return;
@@ -53,7 +53,7 @@ function ReportsContent() {
 
     const csvContent = [
       headers.join(','),
-      ...leaveUsageReport.employeeReports.map(report => [
+      ...leaveUsageReport.employeeReports.map((report: any) => [
         report.employeeName,
         report.department,
         report.leaveTypeName,
@@ -114,7 +114,7 @@ function ReportsContent() {
                 </SelectTrigger>
                 <SelectContent className="dark:bg-gray-700 dark:border-gray-600">
                   <SelectItem value="" className="dark:text-white">All departments</SelectItem>
-                  {departments.map(dept => (
+                  {departments.map((dept: any) => (
                     <SelectItem key={dept} value={dept} className="dark:text-white">{dept}</SelectItem>
                   ))}
                 </SelectContent>
@@ -140,7 +140,7 @@ function ReportsContent() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {employees?.employees.filter(e => e.role !== 'hr').length || 0}
+                  {employees?.employees.filter((e: any) => e.role !== 'hr').length || 0}
                 </div>
               </CardContent>
             </Card>
@@ -163,7 +163,7 @@ function ReportsContent() {
               <CardContent>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {leaveUsageReport?.departmentSummaries.length ? 
-                    Math.round(leaveUsageReport.departmentSummaries.reduce((acc, dept) => acc + dept.averageUtilization, 0) / leaveUsageReport.departmentSummaries.length) : 0}%
+                    Math.round(leaveUsageReport.departmentSummaries.reduce((acc: any, dept: any) => acc + dept.averageUtilization, 0) / leaveUsageReport.departmentSummaries.length) : 0}%
                 </div>
               </CardContent>
             </Card>
@@ -175,7 +175,7 @@ function ReportsContent() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {leaveUsageReport?.departmentSummaries.reduce((acc, dept) => acc + dept.totalUsedDays, 0) || 0}
+                  {leaveUsageReport?.departmentSummaries.reduce((acc: any, dept: any) => acc + dept.totalUsedDays, 0) || 0}
                 </div>
               </CardContent>
             </Card>
@@ -192,7 +192,7 @@ function ReportsContent() {
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">No data available</p>
               ) : (
                 <div className="space-y-4">
-                  {leaveUsageReport.departmentSummaries.map((dept) => (
+                  {leaveUsageReport.departmentSummaries.map((dept: any) => (
                     <div key={dept.department} className="border dark:border-gray-600 rounded-lg p-4">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
                         <h3 className="font-medium text-gray-900 dark:text-white truncate">{dept.department}</h3>
@@ -243,7 +243,7 @@ function ReportsContent() {
                       </tr>
                     </thead>
                     <tbody>
-                      {leaveUsageReport.employeeReports.map((report, index) => (
+                      {leaveUsageReport.employeeReports.map((report: any, index: any) => (
                         <tr key={index} className="border-b dark:border-gray-600">
                           <td className="p-2 text-gray-900 dark:text-white">{report.employeeName}</td>
                           <td className="p-2 text-gray-600 dark:text-gray-400">{report.department}</td>

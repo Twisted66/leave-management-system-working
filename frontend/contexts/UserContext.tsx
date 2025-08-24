@@ -1,6 +1,8 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import type { Employee } from '~backend/leave/types';
+import type { leave } from '~backend/client';
+
+type Employee = leave.Employee;
 
 interface UserContextType {
   currentUser: Employee | null;

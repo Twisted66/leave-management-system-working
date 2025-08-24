@@ -2,7 +2,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../main';
 import client from '../lib/client';
-import type { Employee } from '~backend/leave/types';
+import type { leave } from '~backend/client';
+
+type Employee = leave.Employee;
 
 interface AuthContextType {
   currentUser: Employee | null;
@@ -13,7 +15,6 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,16 +25,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch employee data after authentication
   const fetchEmployeeData = async (user: User, token: string) => {
     try {
+      console.log('🔐 Fetching employee data with token:', token ? 'Token present' : 'No token');
+      console.log('👤 User ID:', user.id);
+      console.log('🎟️ Token preview:', token ? token.substring(0, 50) + '...' : 'undefined');
+      
       // Set the authentication header for the client
-      client.baseClient.getAuthData = () => ({
-        headers: { Authorization: `Bearer ${token}` }
+      const authenticatedClient = client.with({
+        requestInit: {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
       });
       
+      console.log('🌐 Making authenticated request to backend...');
+      
       // Try to get user by Supabase ID first
-      const response = await client.getUser({ supabaseUserId: user.id });
+      const response = await authenticatedClient.leave.getUser({ supabaseUserId: user.id });
       
       if (response.employee) {
         setCurrentUser(response.employee);
@@ -88,14 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) throw error;
-  };
-
   const logout = async () => {
     await supabase.auth.signOut();
   };
@@ -110,7 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token: session?.access_token ?? null,
       login,
       logout,
-      signUp,
     }}>
       {children}
     </AuthContext.Provider>

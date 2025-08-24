@@ -1,1 +1,19 @@
-{"id": "leave-management-system-99ki", "lang": "typescript"}
+{
+  "id": "leave-management-system-99ki",
+  "lang": "typescript",
+  "cors": {
+    "allowed_origins": [
+      "http://localhost:5173"
+    ],
+    "allowed_methods": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE"
+    ],
+    "allowed_headers": [
+      "*"
+    ],
+    "allow_credentials": true
+  }
+}

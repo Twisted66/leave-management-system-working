@@ -4,3 +4,15 @@ encore.gen.cue
 /.encore
 node_modules
 /encore.gen
+
+# Build outputs
+frontend/dist/
+backend/frontend/dist/
+backend/static/
+*.tsbuildinfo
+
+# Development
+.vite/
+.env.local
+.env.development.local
+.env.production.local

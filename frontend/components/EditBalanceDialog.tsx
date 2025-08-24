@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import backend from '../lib/client';
-import type { Employee, LeaveType } from '~backend/leave/types';
+import type { leave } from '~backend/client';
+
+type Employee = leave.Employee;
+type LeaveType = leave.LeaveType;
 
 interface EditBalanceDialogProps {
   open: boolean;
@@ -33,13 +36,13 @@ export default function EditBalanceDialog({
 
   const { data: balances } = useQuery({
     queryKey: ['balances', employee?.id],
-    queryFn: () => employee ? backend.leave.getEmployeeBalances({ employeeId: employee.id }) : null,
+    queryFn: () => employee ? backend.leave.getEmployeeBalances(employee.id) : null,
     enabled: !!employee && open,
   });
 
   useEffect(() => {
     if (balances?.balances.length && formData.leaveTypeId) {
-      const balance = balances.balances.find(b => b.leaveTypeId === parseInt(formData.leaveTypeId));
+      const balance = balances.balances.find((b: any) => b.leaveTypeId === parseInt(formData.leaveTypeId));
       if (balance) {
         setFormData(prev => ({
           ...prev,
@@ -77,7 +80,7 @@ export default function EditBalanceDialog({
     onOpenChange(newOpen);
   };
 
-  const selectedBalance = balances?.balances.find(b => b.leaveTypeId === parseInt(formData.leaveTypeId));
+  const selectedBalance = balances?.balances.find((b: any) => b.leaveTypeId === parseInt(formData.leaveTypeId));
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

@@ -14,6 +14,7 @@ import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '@/components/ui/use-toast';
 import backend from '../lib/client';
+import React from 'react';
 
 export default function Settings() {
   const { currentUser } = useUser();
@@ -43,7 +44,12 @@ export default function Settings() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: backend.leave.updateEmployeeProfile,
+    mutationFn: (data: { id: number; name?: string; department?: string; profileImageUrl?: string }) => 
+      backend.leave.updateEmployeeProfile(data.id, { 
+        name: data.name, 
+        department: data.department, 
+        profileImageUrl: data.profileImageUrl 
+      }),
     onSuccess: (updatedEmployee) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       // Update the current user in the auth context would be ideal here
@@ -64,7 +70,7 @@ export default function Settings() {
 
   const uploadImageMutation = useMutation({
     mutationFn: backend.storage.uploadProfileImage,
-    onSuccess: async (response) => {
+    onSuccess: async (response: { imageUrl: string }) => {
       if (currentUser) {
         await updateProfileMutation.mutateAsync({
           id: currentUser.id,
@@ -82,7 +88,7 @@ export default function Settings() {
     },
   });
 
-  const departments = [...new Set(employees?.employees.map(e => e.department) || [])];
+  const departments = [...new Set(employees?.employees.map((e: any) => e.department) || [])];
 
   const getInitials = (name: string) => {
     return name
@@ -266,7 +272,7 @@ export default function Settings() {
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>
-                    {departments.map((dept) => (
+                    {departments.map((dept: any) => (
                       <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                     ))}
                     <SelectItem value="Engineering">Engineering</SelectItem>

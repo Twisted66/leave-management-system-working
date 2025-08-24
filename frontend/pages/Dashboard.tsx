@@ -10,7 +10,7 @@ export default function Dashboard() {
 
   const { data: balances } = useQuery({
     queryKey: ['balances', currentUser?.id],
-    queryFn: () => currentUser ? backend.leave.getEmployeeBalances({ employeeId: currentUser.id }) : null,
+    queryFn: () => currentUser ? backend.leave.getEmployeeBalances(currentUser.id) : null,
     enabled: !!currentUser,
   });
 
@@ -51,7 +51,7 @@ export default function Dashboard() {
 
       {/* Leave Balances */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {balances?.balances.map((balance) => (
+        {balances?.balances.map((balance: any) => (
           <Card key={balance.id} className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-900 dark:text-white truncate pr-2">
@@ -89,7 +89,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {myRequests?.requests.filter(r => r.status === 'approved').length || 0}
+              {myRequests?.requests.filter((r: any) => r.status === 'approved').length || 0}
             </div>
             <p className="text-xs text-muted-foreground">This year</p>
           </CardContent>
@@ -119,7 +119,7 @@ export default function Dashboard() {
             <p className="text-gray-500 dark:text-gray-400 text-center py-4">No leave requests yet</p>
           ) : (
             <div className="space-y-3">
-              {recentRequests.map((request) => (
+              {recentRequests.map((request: any) => (
                 <div key={request.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-900 dark:text-white truncate">{request.leaveTypeName}</p>
@@ -150,7 +150,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {pendingSummary.byDepartment.map((dept) => (
+                {pendingSummary.byDepartment.map((dept: any) => (
                   <div key={dept.department} className="flex justify-between items-center">
                     <span className="text-gray-900 dark:text-white truncate pr-2">{dept.department}</span>
                     <span className="font-medium text-gray-900 dark:text-white flex-shrink-0">{dept.pendingCount}</span>
@@ -166,7 +166,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {pendingSummary.byLeaveType.map((type) => (
+                {pendingSummary.byLeaveType.map((type: any) => (
                   <div key={type.leaveTypeName} className="flex justify-between items-center">
                     <span className="text-gray-900 dark:text-white truncate pr-2">{type.leaveTypeName}</span>
                     <span className="font-medium text-gray-900 dark:text-white flex-shrink-0">{type.pendingCount}</span>

@@ -134,6 +134,10 @@ import {
     getUser as api_leave_supabase_sync_getUser,
     syncUser as api_leave_supabase_sync_syncUser
 } from "~backend/leave/supabase_sync";
+import {
+    testAuth as api_leave_test_auth_testAuth,
+    testNoAuth as api_leave_test_auth_testNoAuth
+} from "~backend/leave/test_auth";
 
 export namespace leave {
 
@@ -168,6 +172,8 @@ export namespace leave {
             this.login = this.login.bind(this)
             this.sendExpiryNotification = this.sendExpiryNotification.bind(this)
             this.syncUser = this.syncUser.bind(this)
+            this.testAuth = this.testAuth.bind(this)
+            this.testNoAuth = this.testNoAuth.bind(this)
             this.updateAbsenceConversionStatus = this.updateAbsenceConversionStatus.bind(this)
             this.updateBalance = this.updateBalance.bind(this)
             this.updateDocument = this.updateDocument.bind(this)
@@ -433,6 +439,21 @@ export namespace leave {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/auth/sync-user`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_leave_supabase_sync_syncUser>
+        }
+
+        public async testAuth(): Promise<ResponseType<typeof api_leave_test_auth_testAuth>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/test/auth`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_leave_test_auth_testAuth>
+        }
+
+        /**
+         * Test endpoint without auth
+         */
+        public async testNoAuth(): Promise<ResponseType<typeof api_leave_test_auth_testNoAuth>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/test/no-auth`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_leave_test_auth_testNoAuth>
         }
 
         /**

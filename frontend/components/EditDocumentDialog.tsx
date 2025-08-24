@@ -9,7 +9,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { CompanyDocument } from '~backend/leave/types';
+import type { leave } from '~backend/client';
+
+type CompanyDocument = leave.CompanyDocument;
 
 interface EditDocumentDialogProps {
   open: boolean;

@@ -4,7 +4,9 @@
   "type": "module",
   "packageManager": "npm@10.5.0",
   "scripts": {
-    "build": "cd ../frontend && rm -rf node_modules && rm -rf dist && rm -rf .vite && npm install --no-cache && npx vite build --outDir=../backend/frontend/dist --emptyOutDir"
+    "build": "npm run prebuild && cd ../frontend && rm -rf node_modules && rm -rf dist && rm -rf .vite && npm install --no-cache && npm run build && cp -r dist/* ../backend/frontend/dist/",
+    "clean": "rm -rf frontend/dist && rm -rf static",
+    "prebuild": "npm run clean && mkdir -p frontend/dist"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

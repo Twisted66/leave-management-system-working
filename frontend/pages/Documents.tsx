@@ -74,7 +74,12 @@ function DocumentsContent() {
   });
 
   const updateDocumentMutation = useMutation({
-    mutationFn: backend.leave.updateDocument,
+    mutationFn: (data: { id: number; name?: string; description?: string; expiryDate?: string }) => 
+      backend.leave.updateDocument(data.id, { 
+        name: data.name, 
+        description: data.description, 
+        expiryDate: data.expiryDate 
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['expiring-documents'] });
@@ -96,7 +101,7 @@ function DocumentsContent() {
   });
 
   const deleteDocumentMutation = useMutation({
-    mutationFn: backend.leave.deleteDocument,
+    mutationFn: (data: { id: number }) => backend.leave.deleteDocument(data.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['expiring-documents'] });
@@ -117,7 +122,7 @@ function DocumentsContent() {
 
   const sendNotificationsMutation = useMutation({
     mutationFn: backend.leave.checkExpiringDocuments,
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       toast({
         title: 'Success',
         description: `${result.notificationsSent} expiry notifications sent`,
@@ -146,7 +151,7 @@ function DocumentsContent() {
 
   const handleDownload = async (document: any) => {
     try {
-      const response = await backend.storage.getCompanyDocument({ filePath: document.filePath });
+      const response = await backend.storage.getCompanyDocument(document.filePath);
       window.open(response.downloadUrl, '_blank');
     } catch (error) {
       console.error('Failed to download document:', error);
@@ -258,7 +263,7 @@ function DocumentsContent() {
       </div>
 
       {/* Expiring Documents Alert */}
-      {expiringDocuments?.documents.length > 0 && (
+      {expiringDocuments && expiringDocuments.documents.length > 0 && (
         <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-orange-800 dark:text-orange-200">
@@ -271,7 +276,7 @@ function DocumentsContent() {
               {expiringDocuments.documents.length} document(s) will expire within the next 30 days.
             </p>
             <div className="space-y-2">
-              {expiringDocuments.documents.slice(0, 3).map((doc) => (
+              {expiringDocuments.documents.slice(0, 3).map((doc: any) => (
                 <div key={doc.id} className="flex justify-between items-center text-sm">
                   <span className="text-orange-800 dark:text-orange-200 truncate pr-2">{doc.name}</span>
                   <span className="text-orange-600 dark:text-orange-400 flex-shrink-0">
@@ -308,7 +313,7 @@ function DocumentsContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {documents?.documents.filter(d => d.documentType === 'license').length || 0}
+              {documents?.documents.filter((d: any) => d.documentType === 'license').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -320,7 +325,7 @@ function DocumentsContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {documents?.documents.filter(d => d.documentType === 'certificate').length || 0}
+              {documents?.documents.filter((d: any) => d.documentType === 'certificate').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -383,7 +388,7 @@ function DocumentsContent() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {documents.documents.map((document) => (
+                  {documents.documents.map((document: any) => (
                     <DocumentCard key={document.id} document={document} />
                   ))}
                 </div>
@@ -399,7 +404,7 @@ function DocumentsContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {documents?.documents.filter(d => d.documentType === 'license').map((document) => (
+                {documents?.documents.filter((d: any) => d.documentType === 'license').map((document: any) => (
                   <DocumentCard key={document.id} document={document} />
                 ))}
               </div>
@@ -414,7 +419,7 @@ function DocumentsContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {documents?.documents.filter(d => d.documentType === 'certificate').map((document) => (
+                {documents?.documents.filter((d: any) => d.documentType === 'certificate').map((document: any) => (
                   <DocumentCard key={document.id} document={document} />
                 ))}
               </div>
@@ -429,7 +434,7 @@ function DocumentsContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {documents?.documents.filter(d => d.documentType === 'policy').map((document) => (
+                {documents?.documents.filter((d: any) => d.documentType === 'policy').map((document: any) => (
                   <DocumentCard key={document.id} document={document} />
                 ))}
               </div>
@@ -449,7 +454,7 @@ function DocumentsContent() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {expiringDocuments.documents.map((document) => (
+                  {expiringDocuments.documents.map((document: any) => (
                     <DocumentCard key={document.id} document={document} />
                   ))}
                 </div>
