@@ -3,7 +3,3 @@
 copy = [
     "backend/frontend/dist"
 ]
-
-[runtime]
-# Enable static asset serving
-static_assets = true
