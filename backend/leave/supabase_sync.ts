@@ -139,7 +139,7 @@ interface GetUserResponse {
  * Gets user data by Supabase user ID
  */
 export const getUser = api<GetUserRequest, GetUserResponse>(
-  { expose: true, method: "GET", path: "/auth/user/:id", auth: true },
+  { expose: true, method: "GET", path: "/auth/user/:supabaseUserId", auth: true },
   async (req) => {
     try {
       const employee = await leaveDB.queryRow<{
@@ -159,7 +159,7 @@ export const getUser = api<GetUserRequest, GetUserResponse>(
                created_at as "createdAt",
                supabase_id as "supabaseId"
         FROM employees 
-        WHERE supabase_id = ${req.id}
+        WHERE supabase_id = ${req.supabaseUserId}
       `;
 
       if (!employee) {
