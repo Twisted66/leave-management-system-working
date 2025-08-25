@@ -4,8 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  // Must match React Router basename
-  base: '/frontend/',
+  // No base path needed - served from root with /!path fallback
   
   resolve: {
     alias: {
@@ -49,7 +48,7 @@ export default defineConfig({
 
   build: {
     outDir: 'dist',       // Build to ./frontend/dist (backend copies this)
-    assetsDir: 'assets',  // Encore will serve under /frontend/assets/
+    assetsDir: 'assets',  // Encore will serve under /assets/
     emptyOutDir: true,
     minify: 'esbuild',
     sourcemap: false,
