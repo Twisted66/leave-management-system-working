@@ -1,5 +1,5 @@
 [build]
 # Build frontend and copy to deployment
 copy = [
-    "backend/static"
+    "backend/frontend/static"
 ]

@@ -4,9 +4,9 @@
   "type": "module",
   "packageManager": "npm@10.5.0",
   "scripts": {
-    "build": "npm run prebuild && cd ../frontend && rm -rf node_modules && rm -rf dist && rm -rf .vite && npm install --no-cache && npm run build && mkdir -p ../backend/static && cp -r dist/* ../backend/static/",
-    "clean": "rm -rf static/*",
-    "prebuild": "npm run clean"
+    "build": "npm run prebuild && cd ../frontend && rm -rf node_modules && rm -rf dist && rm -rf .vite && npm install --no-cache && npm run build && mkdir -p ../backend/frontend/static && cp -r dist/* ../backend/frontend/static/",
+    "clean": "rm -rf frontend/static/*",
+    "prebuild": "npm run clean && mkdir -p frontend/static"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
