@@ -2,26 +2,9 @@
   "name": "leap-app",
   "version": "1.0.0",
   "type": "module",
-  "packageManager": "npm@10.5.0",
+  "packageManager": "bun",
   "workspaces": [
     "backend",
     "frontend"
-  ],
-  "scripts": {
-    "test": "playwright test",
-    "test:smoke": "playwright test tests/smoke.spec.ts",
-    "test:auth": "playwright test tests/auth-*.spec.ts",
-    "test:spa": "playwright test tests/spa-*.spec.ts",
-    "test:headed": "playwright test --headed",
-    "test:report": "playwright show-report",
-    "test:staging": "playwright test --config=playwright.config.staging.ts",
-    "test:staging:smoke": "playwright test tests/smoke.spec.ts --config=playwright.config.staging.ts",
-    "test:staging:auth": "playwright test tests/auth-*.spec.ts --config=playwright.config.staging.ts",
-    "test:staging:spa": "playwright test tests/spa-*.spec.ts --config=playwright.config.staging.ts",
-    "test:staging:headed": "playwright test --config=playwright.config.staging.ts --headed",
-    "test:staging:report": "playwright show-report test-results/staging-html-report"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.48.2"
-  }
+  ]
 }

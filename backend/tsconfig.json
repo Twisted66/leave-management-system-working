@@ -5,6 +5,7 @@
 		"lib": ["ES2022"],
 		"target": "ES2022",
 		"module": "ES2022",
+		"types": ["node"],
 		"paths": {
 			"~encore/*": ["./encore.gen/*"]
 		},
@@ -14,35 +15,17 @@
 
 		/* Strict Type-Checking Options */
 		"strict": true,
-		"noImplicitAny": false,
-		"strictNullChecks": true,
-		"strictFunctionTypes": true,
-		"strictBindCallApply": true,
-		"strictPropertyInitialization": true,
-		"noImplicitThis": true,
-		"alwaysStrict": true,
 
 		/* Module Resolution Options */
 		"moduleResolution": "bundler",
-		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"isolatedModules": true,
 		"sourceMap": true,
-		"resolveJsonModule": true,
+
 		"declaration": true,
 
 		/* Advanced Options */
 		"forceConsistentCasingInFileNames": true,
-		"skipLibCheck": true,
-		"typeRoots": ["./node_modules/@types"]
-	},
-	"include": [
-		"**/*.ts",
-		"**/*.tsx"
-	],
-	"exclude": [
-		"node_modules",
-		"**/*.test.ts",
-		"**/*.spec.ts"
-	]
+		"skipLibCheck": true
+	}
 }

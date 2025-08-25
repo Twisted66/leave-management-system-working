@@ -1,15 +1,8 @@
 {
   "name": "frontend",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "type": "module",
-  "packageManager": "npm@10.5.0",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build --mode production",
-    "build:check": "tsc --noEmit && vite build --mode production",
-    "preview": "vite preview",
-    "lint": "tsc --noEmit"
-  },
+  "packageManager": "bun",
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -21,6 +14,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
+    "@supabase/supabase-js": "^2.55.0",
     "@tailwindcss/vite": "^4.1.12",
     "@tanstack/react-query": "^5.85.3",
     "class-variance-authority": "^0.7.1",
@@ -32,12 +26,11 @@
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.8.1",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss": "^4.1.12",
-    "@supabase/supabase-js": "^2.46.1"
+    "tailwindcss": "^4.1.12"
   },
   "devDependencies": {
     "@tailwindcss/oxide": "^4.1.12",
-    "@types/react": "^19.1.11",
+    "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^4.7.0",
     "lightningcss": "^1.30.1",
