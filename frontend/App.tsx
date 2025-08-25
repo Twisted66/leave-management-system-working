@@ -95,7 +95,7 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <UserProvider>
-              <Router basename="/frontend">
+              <Router>
                 <AppRoutes />
               </Router>
               <Toaster />

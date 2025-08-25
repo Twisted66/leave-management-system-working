@@ -4,8 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  // Must match React Router basename
-  base: '/frontend/',
+  // No base path needed - served from root with /!path fallback
   
   resolve: {
     alias: {
