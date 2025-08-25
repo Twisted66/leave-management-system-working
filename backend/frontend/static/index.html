@@ -84,7 +84,7 @@
             
             // Load CSS assets
             for (const filename of assetElements.css) {
-              await loadCSS(`/frontend/assets/${filename}`);
+              await loadCSS(`/assets/${filename}`);
             }
             
             // Load JS assets (dependencies first, then main)
@@ -99,7 +99,7 @@
             });
             
             for (const filename of jsFiles) {
-              await loadScript(`/frontend/assets/${filename}`, true);
+              await loadScript(`/assets/${filename}`, true);
             }
             
             console.log('All assets loaded successfully!');

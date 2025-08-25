@@ -48,7 +48,7 @@ export default defineConfig({
 
   build: {
     outDir: 'dist',       // Build to ./frontend/dist (backend copies this)
-    assetsDir: 'assets',  // Encore will serve under /frontend/assets/
+    assetsDir: 'assets',  // Encore will serve under /assets/
     emptyOutDir: true,
     minify: 'esbuild',
     sourcemap: false,
