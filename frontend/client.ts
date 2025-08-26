@@ -346,7 +346,7 @@ export namespace leave {
          */
         public async getUser(params: { supabaseUserId: string }): Promise<ResponseType<typeof api_leave_supabase_sync_getUser>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/auth/user/${encodeURIComponent(params.supabaseUserId)}`, {method: "GET", body: undefined})
+            const resp = await this.baseClient.callTypedAPI(`/leave/auth/user/${encodeURIComponent(params.supabaseUserId)}`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_leave_supabase_sync_getUser>
         }
 
