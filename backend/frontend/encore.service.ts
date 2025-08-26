@@ -5,7 +5,7 @@ import { Service } from "encore.dev/service";
 export default new Service("frontend");
 
 export const assets = api.static({
-  path: "/*path",
+  path: "/!path",
   expose: true,
   dir: "./dist",
   notFound: "./dist/index.html",
