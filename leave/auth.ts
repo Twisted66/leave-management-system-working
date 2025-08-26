@@ -1,5 +1,5 @@
 import { api, APIError, Header } from "encore.dev/api";
-import { authHandler } from "encore.dev/auth";
+import { authHandler } from "~encore/auth";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
 import { userCache, CacheKeys } from "./cache";

@@ -1,5 +1,5 @@
 import { api } from "encore.dev/api";
-import { getAuthData } from "encore.dev/auth";
+import { getAuthData } from "~encore/auth";
 import { leaveDB } from "./db";
 import type { LeaveBalance } from "./types";
 

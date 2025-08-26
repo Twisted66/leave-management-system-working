@@ -1,5 +1,5 @@
 import { api, APIError, Header, Gateway } from "encore.dev/api";
-import { authHandler } from "encore.dev/auth";
+import { authHandler } from "~encore/auth";
 
 interface AuthParams {
   authorization: Header<"Authorization">;

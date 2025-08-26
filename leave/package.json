@@ -1,0 +1,9 @@
+{
+  "name": "leave-service",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "encore.dev": "^1.49.1"
+  }
+}
