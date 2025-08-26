@@ -1,5 +1,5 @@
-import { api, APIError, Header } from "encore.dev/api";
-import { authHandler } from "~encore/auth";
+import { api, APIError, Header, Gateway } from "encore.dev/api";
+import { authHandler } from "encore.dev/auth";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
 import { userCache, CacheKeys } from "./cache";
@@ -177,6 +177,11 @@ export const authHandlerImpl = authHandler<AuthParams, AuthData>(
     }
   }
 );
+
+// Configure API Gateway with auth handler
+export const gateway = new Gateway({
+  authHandler: authHandlerImpl,
+});
 
 // Test endpoint to verify auth handler is working
 export const testAuth = api<void, { message: string, user: any }>(
