@@ -1,6 +1,6 @@
 import { api, APIError } from "encore.dev/api";
 import { secret } from "encore.dev/config";
-import { getAuthData } from "~encore/auth";
+import { getAuthData } from "encore.dev/internal/codegen/auth";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
 import * as crypto from "crypto";

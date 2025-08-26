@@ -1,5 +1,5 @@
 import { api, APIError } from "encore.dev/api";
-import { getAuthData } from "~encore/auth";
+import { getAuthData } from "encore.dev/internal/codegen/auth";
 import { leaveDB } from "./db";
 import type { LeaveRequest } from "./types";
 
