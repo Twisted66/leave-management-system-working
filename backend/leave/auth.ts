@@ -124,9 +124,12 @@ export const authHandlerImpl = authHandler<AuthParams, AuthData>(
     }
 
     try {
+      console.log('Attempting to validate Supabase token...');
       const decoded = await validateSupabaseToken(token);
+      console.log('Supabase token validated. Decoded:', decoded);
       
       if (!decoded.sub || !decoded.email) {
+        console.log('Invalid token: missing claims (sub or email)');
         throw APIError.unauthenticated('Invalid token: missing claims');
       }
 
@@ -134,22 +137,27 @@ export const authHandlerImpl = authHandler<AuthParams, AuthData>(
       let employee = userCache.get(CacheKeys.userByExternalId(decoded.sub));
       
       if (!employee) {
-        console.log('📄 Employee not in cache, querying database');
-        const dbEmployee = await leaveDB.queryRow<Employee & { supabaseId: string }>`
-          SELECT id, email, name, department, role, manager_id as "managerId", profile_image_url as "profileImageUrl", created_at as "createdAt", supabase_id as "supabaseId"
-          FROM employees WHERE supabase_id = ${decoded.sub}
-        `;
+        console.log('📄 Employee not in cache, querying database for supabase_id:', decoded.sub);
+        try {
+          const dbEmployee = await leaveDB.queryRow<Employee & { supabaseId: string }>`
+            SELECT id, email, name, department, role, manager_id as "managerId", profile_image_url as "profileImageUrl", created_at as "createdAt", supabase_id as "supabaseId"
+            FROM employees WHERE supabase_id = ${decoded.sub}
+          `;
 
-        if (!dbEmployee) {
-          console.log('❌ User not found in database');
-          throw APIError.unauthenticated('User not found in the system.');
+          if (!dbEmployee) {
+            console.log('❌ User not found in database for supabase_id:', decoded.sub);
+            throw APIError.unauthenticated('User not found in the system.');
+          }
+          employee = dbEmployee;
+          userCache.set(CacheKeys.userByExternalId(decoded.sub), employee);
+          userCache.set(CacheKeys.userById(employee.id), employee);
+          console.log('✅ Employee cached from database');
+        } catch (dbError: any) {
+          console.error('❌ Database query error:', dbError);
+          throw APIError.internal(`Database error during authentication: ${dbError.message}`);
         }
-        employee = dbEmployee;
-        userCache.set(CacheKeys.userByExternalId(decoded.sub), employee);
-        userCache.set(CacheKeys.userById(employee.id), employee);
-        console.log('✅ Employee cached');
       } else {
-        console.log('✅ Employee found in cache');
+        console.log('✅ Employee found in cache:', employee.email);
       }
 
       console.log('✅ Auth successful for user:', employee.email);
@@ -160,8 +168,12 @@ export const authHandlerImpl = authHandler<AuthParams, AuthData>(
         supabaseUserId: decoded.sub
       };
     } catch (error: any) {
-      console.error('❌ Authentication error:', error);
-      throw APIError.unauthenticated(`Authentication failed: ${error.message}`);
+      console.error('❌ Top-level authentication error in authHandlerImpl:', error);
+      if (error instanceof APIError) {
+        throw error; // Re-throw APIError as is
+      } else {
+        throw APIError.internal(`An unexpected error occurred during authentication: ${error.message}`);
+      }
     }
   }
 );
