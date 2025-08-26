@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__encore-mcp__get_services",
+      "mcp__encore-mcp__call_endpoint"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

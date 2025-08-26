@@ -3,6 +3,9 @@
   "workspaces": {
     "": {
       "name": "leap-app",
+      "dependencies": {
+        "encore.dev": "^1.49.1",
+      },
     },
     "backend": {
       "name": "backend",

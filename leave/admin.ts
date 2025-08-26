@@ -33,62 +33,115 @@ interface CreateAdminResponse {
 export const createInitialAdmin = api<CreateAdminRequest, CreateAdminResponse>(
   { expose: true, method: "POST", path: "/admin/create-initial", auth: false },
   async (req) => {
-    // Verify initialization secret - temporarily hardcoded for development
-    const secretValue = "admin123";
+    // SECURITY: Use environment variable for initialization secret
+    const secretValue = process.env.INIT_ADMIN_SECRET || "admin123";
     if (req.initSecret !== secretValue) {
+      console.warn(`❌ Invalid initialization secret attempt from ${req.email}`);
       throw APIError.unauthenticated("Invalid initialization secret");
     }
 
-    // Check if any admin users already exist
-    const existingAdmin = await leaveDB.queryRow<{ count: number }>`
-      SELECT COUNT(*) as count FROM employees WHERE role = 'hr'
-    `;
-
-    if (existingAdmin && existingAdmin.count > 0) {
-      throw APIError.permissionDenied("Admin user already exists. Use regular admin creation endpoints.");
-    }
-
-    // Create the initial admin user
-    const admin = await leaveDB.queryRow<Employee>`
-      INSERT INTO employees (supabase_id, email, name, department, role)
-      VALUES (${req.supabaseId}, ${req.email}, ${req.name}, ${req.department}, 'hr')
-      RETURNING 
-        id,
-        email,
-        name,
-        department,
-        role,
-        manager_id as "managerId",
-        profile_image_url as "profileImageUrl",
-        created_at as "createdAt",
-        supabase_id as "supabaseId"
-    `;
-
-    if (!admin) {
-      throw APIError.internal("Failed to create admin user");
-    }
-
-    // Initialize leave types if they don't exist
-    const existingLeaveTypes = await leaveDB.queryRow<{ count: number }>`
-      SELECT COUNT(*) as count FROM leave_types
-    `;
-
-    if (existingLeaveTypes && existingLeaveTypes.count === 0) {
-      await leaveDB.exec`
-        INSERT INTO leave_types (name, description, annual_allocation, max_carry_forward, requires_approval)
-        VALUES 
-          ('Annual Leave', 'Annual vacation leave', 25, 5, true),
-          ('Sick Leave', 'Medical leave for illness', 10, 0, false),
-          ('Personal Leave', 'Personal time off', 3, 0, true),
-          ('Maternity/Paternity Leave', 'Parental leave', 90, 0, true),
-          ('Emergency Leave', 'Emergency time off', 2, 0, true)
+    // TRANSACTION FIX: Use transaction for atomic admin creation
+    const tx = leaveDB.begin();
+    
+    try {
+      // Check if any admin users already exist (within transaction)
+      const existingAdmin = await tx.queryRow<{ count: number }>`
+        SELECT COUNT(*) as count FROM employees WHERE role = 'hr'
       `;
-    }
 
-    return {
-      admin,
-      message: "Initial admin user created successfully. System is ready for use."
-    };
+      if (existingAdmin && existingAdmin.count > 0) {
+        throw APIError.permissionDenied("Admin user already exists. Use regular admin creation endpoints.");
+      }
+
+      // Validate input data
+      if (!req.email || !req.name || !req.supabaseId) {
+        throw APIError.invalidArgument("Missing required fields: email, name, supabaseId");
+      }
+
+      // Create the initial admin user within transaction
+      const admin = await tx.queryRow<Employee>`
+        INSERT INTO employees (supabase_id, email, name, department, role, created_at, updated_at)
+        VALUES (${req.supabaseId}, ${req.email}, ${req.name}, ${req.department}, 'hr', NOW(), NOW())
+        RETURNING 
+          id,
+          email,
+          name,
+          department,
+          role,
+          manager_id as "managerId",
+          profile_image_url as "profileImageUrl",
+          created_at as "createdAt",
+          supabase_id as "supabaseId"
+      `;
+
+      if (!admin) {
+        throw new Error("INSERT returned no rows - database constraint violation");
+      }
+
+      // Initialize leave types if they don't exist (within transaction)
+      const existingLeaveTypes = await tx.queryRow<{ count: number }>`
+        SELECT COUNT(*) as count FROM leave_types
+      `;
+
+      if (existingLeaveTypes && existingLeaveTypes.count === 0) {
+        await tx.exec`
+          INSERT INTO leave_types (name, description, annual_allocation, max_carry_forward, requires_approval)
+          VALUES 
+            ('Annual Leave', 'Annual vacation leave', 25, 5, true),
+            ('Sick Leave', 'Medical leave for illness', 10, 0, false),
+            ('Personal Leave', 'Personal time off', 3, 0, true),
+            ('Maternity/Paternity Leave', 'Parental leave', 90, 0, true),
+            ('Emergency Leave', 'Emergency time off', 2, 0, true)
+        `;
+        console.log("✅ Default leave types initialized");
+      }
+
+      // Initialize admin's leave balances for current year
+      const currentYear = new Date().getFullYear();
+      await tx.exec`
+        INSERT INTO employee_leave_balances (employee_id, leave_type_id, year, allocated_days, used_days, carried_forward_days)
+        SELECT 
+          ${admin.id}, 
+          lt.id, 
+          ${currentYear}, 
+          lt.annual_allocation, 
+          0, 
+          0
+        FROM leave_types lt
+        ON CONFLICT (employee_id, leave_type_id, year) DO NOTHING
+      `;
+
+      // Commit the transaction
+      await tx.commit();
+      
+      console.log(`🎉 Initial admin created: ${admin.email} (ID: ${admin.id})`);
+
+      return {
+        admin,
+        message: "Initial admin user created successfully. System is ready for use."
+      };
+    } catch (error: any) {
+      // Rollback transaction on any error
+      await tx.rollback();
+      
+      console.error('Create initial admin error:', {
+        email: req.email,
+        supabaseId: req.supabaseId,
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      });
+
+      if (error instanceof APIError) {
+        throw error;
+      }
+      
+      if (error.message?.includes('unique') || error.message?.includes('duplicate')) {
+        throw APIError.alreadyExists('Admin user already exists with this email or Supabase ID');
+      }
+      
+      throw APIError.internal(`Failed to create initial admin: ${error.message}`);
+    }
   }
 );
 
