@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../main';
+import { supabase } from '../lib/supabase';
 import client from '../lib/client';
 import type { leave } from '~backend/client';
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../../main';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function LoginForm() {
