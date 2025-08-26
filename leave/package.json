@@ -4,6 +4,8 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "encore.dev": "^1.49.1"
+    "encore.dev": "^1.49.1",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2"
   }
 }
