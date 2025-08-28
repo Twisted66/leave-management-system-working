@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import client from '../lib/client';
+import { getAuthenticatedClient } from '../lib/client';
 import type { leave } from '~backend/client';
 
 type Employee = leave.Employee;
@@ -29,17 +29,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔐 Fetching employee data with token:', token ? 'Token present' : 'No token');
       console.log('👤 User ID:', user.id);
+      console.log('📧 User Email:', user.email);
       console.log('🎟️ Token preview:', token ? token.substring(0, 50) + '...' : 'undefined');
       
-      // Set the authentication header for the client
-      const authenticatedClient = client.with({
-        requestInit: {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      });
+      // Get authenticated client
+      const authenticatedClient = getAuthenticatedClient(token);
       
       console.log('🌐 Making authenticated request to backend...');
       
@@ -47,14 +41,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await authenticatedClient.leave.getUser({ supabaseUserId: user.id });
       
       if (response.employee) {
+        console.log('✅ Employee data fetched successfully:', response.employee.email);
         setCurrentUser(response.employee);
       } else {
-        // If no employee record exists, user needs to be set up in the system
-        console.log('No employee record found for user:', user.id);
+        console.log('⚠️ No employee record found for user:', user.id);
         setCurrentUser(null);
       }
-    } catch (error) {
-      console.error('Failed to fetch employee data:', error);
+    } catch (error: any) {
+      console.error('❌ Failed to fetch employee data:', error);
+      
+      // More detailed error logging
+      if (error?.status) {
+        console.error('HTTP Status:', error.status);
+      }
+      if (error?.message) {
+        console.error('Error Message:', error.message);
+      }
+      if (error?.code) {
+        console.error('Error Code:', error.code);
+      }
+      
+      // Handle specific authentication errors
+      if (error?.status === 401) {
+        console.log('🔄 Authentication failed, user may need to be created in system');
+      } else if (error?.status === 404) {
+        console.log('🔄 User not found, may need account setup');
+      }
+      
       setCurrentUser(null);
     }
   };

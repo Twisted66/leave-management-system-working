@@ -1,0 +1,139 @@
+// Type definitions for the leave management system
+
+export interface Employee {
+  id: number;
+  email: string;
+  name: string;
+  department: string;
+  role: 'employee' | 'manager' | 'hr';
+  managerId?: number;
+  profileImageUrl?: string;
+  createdAt: Date;
+  supabaseId?: string; // Supabase user identifier
+}
+
+export interface LeaveType {
+  id: number;
+  name: string;
+  annualAllocation: number;
+  carryForwardLimit: number;
+  createdAt: Date;
+}
+
+export interface LeaveBalance {
+  id: number;
+  employeeId: number;
+  leaveTypeId: number;
+  year: number;
+  allocatedDays: number;
+  usedDays: number;
+  carriedForwardDays: number;
+  availableDays: number;
+  leaveTypeName?: string;
+}
+
+export interface LeaveRequest {
+  id: number;
+  employeeId: number;
+  leaveTypeId: number;
+  startDate: Date;
+  endDate: Date;
+  daysRequested: number;
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  managerComments?: string;
+  approvedBy?: number;
+  approvedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  employeeName?: string;
+  leaveTypeName?: string;
+  approverName?: string;
+}
+
+export interface LeaveDocument {
+  id: number;
+  leaveRequestId: number;
+  filename: string;
+  filePath: string;
+  fileSize: number;
+  uploadedAt: Date;
+}
+
+export interface AbsenceRecord {
+  id: number;
+  employeeId: number;
+  absenceDate: Date;
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdBy: number;
+  createdAt: Date;
+  updatedAt: Date;
+  employeeName?: string;
+  createdByName?: string;
+}
+
+export interface AbsenceConversionRequest {
+  id: number;
+  absenceRecordId: number;
+  employeeId: number;
+  justification: string;
+  status: 'pending' | 'approved' | 'rejected';
+  managerComments?: string;
+  approvedBy?: number;
+  approvedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  employeeName?: string;
+  approverName?: string;
+  absenceDate?: Date;
+}
+
+export interface CompanyDocument {
+  id: number;
+  name: string;
+  description?: string;
+  documentType: 'license' | 'certificate' | 'policy' | 'other';
+  filePath: string;
+  fileSize: number;
+  expiryDate?: Date;
+  uploadedBy: number;
+  uploadedAt: Date;
+  updatedAt: Date;
+  uploaderName?: string;
+}
+
+export interface SickLeaveTier {
+  id: number;
+  employeeId: number;
+  year: number;
+  fullPayDaysUsed: number;    // Out of 15 days full pay (UAE Labor Law 2025)
+  halfPayDaysUsed: number;    // Out of 30 days half pay (UAE Labor Law 2025)
+  unpaidDaysUsed: number;     // Out of 45 days unpaid (UAE Labor Law 2025)
+}
+
+export interface SickLeaveBalance {
+  year: number;
+  fullPayDaysRemaining: number;    // Out of 15
+  halfPayDaysRemaining: number;    // Out of 30
+  unpaidDaysRemaining: number;     // Out of 45
+  fullPayDaysUsed: number;
+  halfPayDaysUsed: number;
+  unpaidDaysUsed: number;
+}
+
+export interface DocumentNotifier {
+  id: number;
+  documentId?: number;
+  documentName: string;
+  userId: number;
+  expiryDate: Date;
+  notificationFrequency: 'weekly' | 'monthly' | 'custom';
+  customFrequencyDays?: number;
+  status: 'active' | 'inactive';
+  lastNotificationSent?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  userName?: string;
+  documentDetails?: CompanyDocument;
+}

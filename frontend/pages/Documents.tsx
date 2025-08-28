@@ -10,6 +10,7 @@ import { useUser } from '../contexts/UserContext';
 import { useBackend } from '../hooks/useBackend';
 import CreateDocumentDialog from '../components/CreateDocumentDialog';
 import EditDocumentDialog from '../components/EditDocumentDialog';
+import { DocumentGrid } from '../components/DocumentGrid';
 import { useToast } from '@/components/ui/use-toast';
 import ProtectedRoute from '../components/ProtectedRoute';
 
@@ -144,9 +145,19 @@ function DocumentsContent() {
   };
 
   const handleDelete = async (documentId: number) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
-      deleteDocumentMutation.mutate({ id: documentId });
-    }
+    return new Promise<void>((resolve, reject) => {
+      if (window.confirm('Are you sure you want to delete this document?')) {
+        deleteDocumentMutation.mutate(
+          { id: documentId },
+          {
+            onSuccess: () => resolve(),
+            onError: (error) => reject(error)
+          }
+        );
+      } else {
+        reject(new Error('Delete cancelled'));
+      }
+    });
   };
 
   const handleDownload = async (document: any) => {
@@ -188,55 +199,6 @@ function DocumentsContent() {
     return null;
   };
 
-  const DocumentCard = ({ document }: { document: any }) => (
-    <div className="border dark:border-gray-600 rounded-lg p-4">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <h3 className="font-medium text-gray-900 dark:text-white truncate">{document.name}</h3>
-            {getDocumentTypeBadge(document.documentType)}
-            {getExpiryStatus(document.expiryDate)}
-          </div>
-          {document.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{document.description}</p>
-          )}
-          <div className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
-            <p>Uploaded by {document.uploaderName} on {new Date(document.uploadedAt).toLocaleDateString()}</p>
-            {document.expiryDate && (
-              <p>Expires: {new Date(document.expiryDate).toLocaleDateString()}</p>
-            )}
-            <p>Size: {(document.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-          </div>
-        </div>
-        <div className="flex gap-1 flex-shrink-0">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleDownload(document)}
-            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleEdit(document)}
-            className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleDelete(document.id)}
-            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -370,97 +332,58 @@ function DocumentsContent() {
         </div>
 
         <TabsContent value="all">
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">All Documents</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!documents?.documents.length ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">No documents found</p>
-                  <Button 
-                    onClick={() => setShowCreateDialog(true)}
-                    className="mt-4"
-                    variant="outline"
-                  >
-                    Upload your first document
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {documents.documents.map((document: any) => (
-                    <DocumentCard key={document.id} document={document} />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <DocumentGrid
+            documents={documents?.documents || []}
+            onDelete={handleDelete}
+            canDelete={true}
+            canDownload={true}
+            isLoading={!documents}
+            emptyMessage="No documents found"
+          />
         </TabsContent>
 
         <TabsContent value="license">
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Licenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {documents?.documents.filter((d: any) => d.documentType === 'license').map((document: any) => (
-                  <DocumentCard key={document.id} document={document} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <DocumentGrid
+            documents={documents?.documents.filter((d: any) => d.documentType === 'license') || []}
+            onDelete={handleDelete}
+            canDelete={true}
+            canDownload={true}
+            isLoading={!documents}
+            emptyMessage="No license documents found"
+          />
         </TabsContent>
 
         <TabsContent value="certificate">
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Certificates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {documents?.documents.filter((d: any) => d.documentType === 'certificate').map((document: any) => (
-                  <DocumentCard key={document.id} document={document} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <DocumentGrid
+            documents={documents?.documents.filter((d: any) => d.documentType === 'certificate') || []}
+            onDelete={handleDelete}
+            canDelete={true}
+            canDownload={true}
+            isLoading={!documents}
+            emptyMessage="No certificate documents found"
+          />
         </TabsContent>
 
         <TabsContent value="policy">
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Policies</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {documents?.documents.filter((d: any) => d.documentType === 'policy').map((document: any) => (
-                  <DocumentCard key={document.id} document={document} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <DocumentGrid
+            documents={documents?.documents.filter((d: any) => d.documentType === 'policy') || []}
+            onDelete={handleDelete}
+            canDelete={true}
+            canDownload={true}
+            isLoading={!documents}
+            emptyMessage="No policy documents found"
+          />
         </TabsContent>
 
         <TabsContent value="expiring">
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Expiring Documents</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!expiringDocuments?.documents.length ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">No documents expiring soon</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {expiringDocuments.documents.map((document: any) => (
-                    <DocumentCard key={document.id} document={document} />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <DocumentGrid
+            documents={expiringDocuments?.documents || []}
+            onDelete={handleDelete}
+            canDelete={true}
+            canDownload={true}
+            isLoading={!expiringDocuments}
+            emptyMessage="No documents expiring soon"
+          />
         </TabsContent>
       </Tabs>
 

@@ -9,15 +9,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bell, Shield, Palette, Save, Camera, Upload } from 'lucide-react';
+import { User, Bell, Shield, Palette, Save, Camera, Upload, Eye, EyeOff } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '@/components/ui/use-toast';
-import backend from '../lib/client';
+import { getAuthenticatedClient } from '../lib/client';
+import { supabase } from '../lib/supabase';
 import React from 'react';
 
 export default function Settings() {
   const { currentUser } = useUser();
+  const { token } = useAuth();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -35,21 +38,63 @@ export default function Settings() {
     weeklyReports: false,
   });
 
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    confirmCurrentPassword: '',
+    newPassword: '',
+  });
+
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    confirmCurrent: false,
+    new: false,
+  });
+
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { data: employees } = useQuery({
     queryKey: ['employees'],
-    queryFn: () => backend.leave.listEmployees(),
-    enabled: currentUser?.role === 'hr',
+    queryFn: () => {
+      if (!token) return null;
+      const client = getAuthenticatedClient(token);
+      return client.leave.listEmployees();
+    },
+    enabled: currentUser?.role === 'hr' && !!token,
   });
 
+  const { data: userPreferences } = useQuery({
+    queryKey: ['user-preferences', currentUser?.id],
+    queryFn: () => {
+      if (!token || !currentUser?.id) return null;
+      const client = getAuthenticatedClient(token);
+      return client.leave.getUserPreferences({});
+    },
+    enabled: !!token && !!currentUser?.id,
+  });
+
+  // Update notifications state when preferences are loaded
+  React.useEffect(() => {
+    if (userPreferences) {
+      setNotifications({
+        emailNotifications: userPreferences.emailNotifications,
+        requestUpdates: userPreferences.requestUpdates,
+        reminderNotifications: userPreferences.reminderNotifications,
+        weeklyReports: userPreferences.weeklyReports,
+      });
+    }
+  }, [userPreferences]);
+
   const updateProfileMutation = useMutation({
-    mutationFn: (data: { id: number; name?: string; department?: string; profileImageUrl?: string }) => 
-      backend.leave.updateEmployeeProfile(data.id, { 
+    mutationFn: (data: { id: number; name?: string; department?: string; profileImageUrl?: string }) => {
+      if (!token) throw new Error('No authentication token');
+      const client = getAuthenticatedClient(token);
+      return client.leave.updateEmployeeProfile({ 
+        id: data.id,
         name: data.name, 
         department: data.department, 
         profileImageUrl: data.profileImageUrl 
-      }),
+      });
+    },
     onSuccess: (updatedEmployee) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       // Update the current user in the auth context would be ideal here
@@ -69,7 +114,11 @@ export default function Settings() {
   });
 
   const uploadImageMutation = useMutation({
-    mutationFn: backend.storage.uploadProfileImage,
+    mutationFn: (data: any) => {
+      if (!token) throw new Error('No authentication token');
+      const client = getAuthenticatedClient(token);
+      return client.storage.uploadProfileImage(data);
+    },
     onSuccess: async (response: { imageUrl: string }) => {
       if (currentUser) {
         await updateProfileMutation.mutateAsync({
@@ -109,12 +158,117 @@ export default function Settings() {
     });
   };
 
-  const handleSaveNotifications = () => {
-    // In a real app, this would call an API to update notification preferences
-    toast({
-      title: 'Success',
-      description: 'Notification preferences updated',
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      // First verify current password by attempting to sign in
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: currentUser?.email || '',
+        password: data.currentPassword,
+      });
+      
+      if (verifyError) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // Update the password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: data.newPassword
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+    },
+    onSuccess: () => {
+      setPasswordData({
+        currentPassword: '',
+        confirmCurrentPassword: '',
+        newPassword: '',
+      });
+      toast({
+        title: 'Success',
+        description: 'Password updated successfully',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to change password:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to change password',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleChangePassword = () => {
+    // Validation
+    if (!passwordData.currentPassword) {
+      toast({
+        title: 'Error',
+        description: 'Please enter your current password',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (passwordData.currentPassword !== passwordData.confirmCurrentPassword) {
+      toast({
+        title: 'Error',
+        description: 'Current passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!passwordData.newPassword) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a new password',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: 'Error',
+        description: 'New password must be at least 6 characters long',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    changePasswordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
     });
+  };
+
+  const updatePreferencesMutation = useMutation({
+    mutationFn: (preferences: { emailNotifications?: boolean; requestUpdates?: boolean; reminderNotifications?: boolean; weeklyReports?: boolean }) => {
+      if (!token) throw new Error('No authentication token');
+      const client = getAuthenticatedClient(token);
+      return client.leave.updateUserPreferences(preferences);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
+      toast({
+        title: 'Success',
+        description: 'Notification preferences updated',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to update preferences:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update notification preferences',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleSaveNotifications = () => {
+    updatePreferencesMutation.mutate(notifications);
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -368,9 +522,13 @@ export default function Settings() {
                 />
               </div>
 
-              <Button onClick={handleSaveNotifications} className="w-full sm:w-auto">
+              <Button 
+                onClick={handleSaveNotifications} 
+                className="w-full sm:w-auto"
+                disabled={updatePreferencesMutation.isPending}
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Save Preferences
+                {updatePreferencesMutation.isPending ? 'Saving...' : 'Save Preferences'}
               </Button>
             </CardContent>
           </Card>
@@ -437,21 +595,95 @@ export default function Settings() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Change your account password
                 </p>
-                <div className="space-y-4 max-w-md">
-                  <div>
+                <div className="space-y-8 max-w-md">
+                  <div className="space-y-2">
                     <Label htmlFor="current-password">Current Password</Label>
-                    <Input id="current-password" type="password" />
+                    <div className="relative">
+                      <Input 
+                        id="current-password" 
+                        type={showPasswords.current ? "text" : "password"}
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        placeholder="Enter current password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                      >
+                        {showPasswords.current ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  <div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-current-password">Confirm Current Password</Label>
+                    <div className="relative">
+                      <Input 
+                        id="confirm-current-password" 
+                        type={showPasswords.confirmCurrent ? "text" : "password"}
+                        value={passwordData.confirmCurrentPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmCurrentPassword: e.target.value }))}
+                        placeholder="Confirm current password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPasswords(prev => ({ ...prev, confirmCurrent: !prev.confirmCurrent }))}
+                      >
+                        {showPasswords.confirmCurrent ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label htmlFor="new-password">New Password</Label>
-                    <Input id="new-password" type="password" />
+                    <div className="relative">
+                      <Input 
+                        id="new-password" 
+                        type={showPasswords.new ? "text" : "password"}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        placeholder="Enter new password (min 6 characters)"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                      >
+                        {showPasswords.new ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Password must be at least 6 characters long
+                    </p>
                   </div>
-                  <div>
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input id="confirm-password" type="password" />
-                  </div>
-                  <Button className="w-full sm:w-auto">
-                    Update Password
+                  
+                  <Button 
+                    className="w-full sm:w-auto"
+                    onClick={handleChangePassword}
+                    disabled={changePasswordMutation.isPending}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
                   </Button>
                 </div>
               </div>

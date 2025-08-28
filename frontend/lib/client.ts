@@ -28,4 +28,17 @@ const client = new Client(getApiUrl(), {
   requestInit: { credentials: "include" } 
 });
 
+// Export function to get authenticated client
+export function getAuthenticatedClient(token: string) {
+  return client.with({
+    requestInit: {
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: "include"
+    }
+  });
+}
+
 export default client;

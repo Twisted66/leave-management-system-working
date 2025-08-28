@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "npm@10.5.0",
   "workspaces": [
-    "leave",
+    "backend/leave",
     "frontend"
   ],
   "dependencies": {

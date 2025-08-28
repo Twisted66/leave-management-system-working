@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, FileText, AlertTriangle } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { useBackend } from '../hooks/useBackend';
+import { DocumentGrid } from '../components/DocumentGrid';
 
 export default function Dashboard() {
   const { currentUser } = useUser();
@@ -36,6 +37,18 @@ export default function Dashboard() {
   const { data: pendingSummary } = useQuery({
     queryKey: ['pending-summary'],
     queryFn: () => backend.leave.getPendingRequestsSummary(),
+    enabled: currentUser?.role === 'hr',
+  });
+
+  const { data: documents } = useQuery({
+    queryKey: ['documents-dashboard'],
+    queryFn: () => backend.leave.listDocuments({}),
+    enabled: currentUser?.role === 'hr',
+  });
+
+  const { data: expiringDocuments } = useQuery({
+    queryKey: ['expiring-documents-dashboard'],
+    queryFn: () => backend.leave.getExpiringDocuments(),
     enabled: currentUser?.role === 'hr',
   });
 
@@ -140,6 +153,100 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Documents Section - For HR Users */}
+      {currentUser?.role === 'hr' && (
+        <>
+          {/* Documents Stats */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Total Documents</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{documents?.documents.length || 0}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Licenses</CardTitle>
+                <FileText className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {documents?.documents.filter((d: any) => d.documentType === 'license').length || 0}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Certificates</CardTitle>
+                <FileText className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {documents?.documents.filter((d: any) => d.documentType === 'certificate').length || 0}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Expiring Soon</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {expiringDocuments?.documents.length || 0}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Documents */}
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-gray-900 dark:text-white">Recent Documents</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DocumentGrid
+                documents={documents?.documents.slice(0, 8) || []}
+                canDelete={false}
+                canDownload={true}
+                isLoading={!documents}
+                emptyMessage="No documents uploaded yet"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Expiring Documents Alert */}
+          {expiringDocuments && expiringDocuments.documents.length > 0 && (
+            <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-800 dark:text-orange-200">
+                  <AlertTriangle className="h-5 w-5" />
+                  Documents Expiring Soon
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-orange-700 dark:text-orange-300 mb-4">
+                  {expiringDocuments.documents.length} document(s) will expire within the next 30 days.
+                </p>
+                <DocumentGrid
+                  documents={expiringDocuments.documents.slice(0, 4) || []}
+                  canDelete={false}
+                  canDownload={true}
+                  isLoading={false}
+                  emptyMessage="No documents expiring soon"
+                />
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
 
       {/* HR Summary */}
       {currentUser?.role === 'hr' && pendingSummary && (

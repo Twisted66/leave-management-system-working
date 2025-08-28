@@ -1,0 +1,12 @@
+{
+  "name": "leave-management-backend",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "leave",
+    "storage"
+  ],
+  "dependencies": {
+    "encore.dev": "^1.49.1"
+  }
+}

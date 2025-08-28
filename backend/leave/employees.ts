@@ -4,11 +4,13 @@ import { leaveDB } from "./db";
 import type { Employee } from "./types";
 import * as bcrypt from "bcrypt";
 
-// Import admin, cache, supabase_sync, auth, and types modules to ensure they get compiled and endpoints are exposed
+// Import admin, cache, supabase_sync, auth, user_preferences, document_notifiers, and types modules to ensure they get compiled and endpoints are exposed
 import "./admin";
 import "./auth";
 import "./cache";
 import "./supabase_sync";
+import "./user_preferences";
+import "./document_notifiers";
 import "./types";
 
 interface ListEmployeesResponse {

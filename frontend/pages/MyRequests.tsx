@@ -5,50 +5,86 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, AlertTriangle } from 'lucide-react';
-import backend from '../lib/client';
+import { getAuthenticatedClient } from '../lib/client';
 import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 import CreateLeaveRequestDialog from '../components/CreateLeaveRequestDialog';
 import CreateAbsenceConversionDialog from '../components/CreateAbsenceConversionDialog';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function MyRequests() {
   const { currentUser } = useUser();
+  const { token } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showAbsenceConversionDialog, setShowAbsenceConversionDialog] = useState(false);
 
+  // Debug logging
+  console.log('MyRequests - currentUser:', currentUser);
+  console.log('MyRequests - currentUser.id:', currentUser?.id);
+  console.log('MyRequests - token present:', !!token);
+
   const { data: requests, isLoading } = useQuery({
     queryKey: ['my-requests', currentUser?.id],
-    queryFn: () => currentUser ? backend.leave.listLeaveRequests({ employeeId: currentUser.id }) : null,
-    enabled: !!currentUser,
+    queryFn: () => {
+      if (!currentUser?.id || !token) return null;
+      const client = getAuthenticatedClient(token);
+      return client.leave.listLeaveRequests({ employeeId: currentUser.id });
+    },
+    enabled: !!currentUser?.id && !!token,
   });
 
   const { data: balances } = useQuery({
     queryKey: ['balances', currentUser?.id],
-    queryFn: () => currentUser ? backend.leave.getEmployeeBalances(currentUser.id) : null,
-    enabled: !!currentUser,
+    queryFn: () => {
+      if (!currentUser?.id || !token) {
+        console.log('Balances query disabled - currentUser.id:', currentUser?.id, 'token present:', !!token);
+        return null;
+      }
+      console.log('Fetching balances for employee ID:', currentUser.id);
+      const client = getAuthenticatedClient(token);
+      return client.leave.getEmployeeBalances({ employeeId: currentUser.id });
+    },
+    enabled: !!currentUser?.id && !!token,
   });
 
   const { data: leaveTypes } = useQuery({
     queryKey: ['leave-types'],
-    queryFn: () => backend.leave.listLeaveTypes(),
+    queryFn: () => {
+      if (!token) return null;
+      const client = getAuthenticatedClient(token);
+      return client.leave.listLeaveTypes();
+    },
+    enabled: !!token,
   });
 
   const { data: absenceRecords } = useQuery({
     queryKey: ['absence-records', currentUser?.id],
-    queryFn: () => currentUser ? backend.leave.listAbsenceRecords({ employeeId: currentUser.id }) : null,
-    enabled: !!currentUser,
+    queryFn: () => {
+      if (!currentUser?.id || !token) return null;
+      const client = getAuthenticatedClient(token);
+      return client.leave.listAbsenceRecords({ employeeId: currentUser.id });
+    },
+    enabled: !!currentUser?.id && !!token,
   });
 
   const { data: absenceConversionRequests } = useQuery({
     queryKey: ['absence-conversion-requests', currentUser?.id],
-    queryFn: () => currentUser ? backend.leave.listAbsenceConversionRequests({ employeeId: currentUser.id }) : null,
-    enabled: !!currentUser,
+    queryFn: () => {
+      if (!currentUser?.id || !token) return null;
+      const client = getAuthenticatedClient(token);
+      return client.leave.listAbsenceConversionRequests({ employeeId: currentUser.id });
+    },
+    enabled: !!currentUser?.id && !!token,
   });
 
   const createRequestMutation = useMutation({
-    mutationFn: backend.leave.createLeaveRequest,
+    mutationFn: (data: any) => {
+      if (!token) throw new Error('No authentication token');
+      const client = getAuthenticatedClient(token);
+      return client.leave.createLeaveRequest(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-requests'] });
       queryClient.invalidateQueries({ queryKey: ['balances'] });
@@ -69,7 +105,11 @@ export default function MyRequests() {
   });
 
   const createAbsenceConversionMutation = useMutation({
-    mutationFn: backend.leave.createAbsenceConversionRequest,
+    mutationFn: (data: any) => {
+      if (!token) throw new Error('No authentication token');
+      const client = getAuthenticatedClient(token);
+      return client.leave.createAbsenceConversionRequest(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['absence-conversion-requests'] });
       setShowAbsenceConversionDialog(false);
