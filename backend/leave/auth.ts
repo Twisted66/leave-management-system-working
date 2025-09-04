@@ -21,15 +21,29 @@ export interface AuthData {
 const SUPABASE_PROJECT_URL = 'https://ocxijuowaqkbyhtnlxdz.supabase.co';
 const SUPABASE_JWKS_URL = `${SUPABASE_PROJECT_URL}/auth/v1/.well-known/jwks.json`;
 
+// JWKS response interfaces
+interface JWKSResponse {
+  keys: JWK[];
+}
+
+interface JWK {
+  kty: string;
+  kid: string;
+  use?: string;
+  n: string;
+  e: string;
+  alg?: string;
+}
+
 // Cache for JWKS keys
-let jwksCache: any = null;
+let jwksCache: JWKSResponse | null = null;
 let jwksCacheTime: number = 0;
 const JWKS_CACHE_TTL = 3600000; // 1 hour
 
 /**
  * Converts a JWK to a PEM public key.
  */
-function jwkToPem(jwk: any): string {
+function jwkToPem(jwk: JWK): string {
   const modulus = Buffer.from(jwk.n, 'base64');
   const exponent = Buffer.from(jwk.e, 'base64');
 
@@ -56,7 +70,7 @@ async function getSigningKey(kid: string): Promise<string> {
       if (!response.ok) {
         throw new Error(`Failed to fetch JWKS: ${response.statusText}`);
       }
-      jwksCache = await response.json();
+      jwksCache = await response.json() as JWKSResponse;
       jwksCacheTime = now;
       console.log('🔑 JWKS fetched and cached successfully.');
     } catch (error) {
@@ -65,7 +79,7 @@ async function getSigningKey(kid: string): Promise<string> {
     }
   }
 
-  const key = jwksCache.keys.find((k: any) => k.kid === kid);
+  const key = jwksCache.keys.find((k: JWK) => k.kid === kid);
   if (!key) {
     throw new Error('Signing key not found.');
   }

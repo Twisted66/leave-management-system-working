@@ -3,6 +3,30 @@ import { getAuthData } from "~encore/auth";
 import { leaveDB } from "./db";
 import type { LeaveRequest } from "./types";
 
+/**
+ * Calculate business days between two dates (excluding weekends).
+ * @param startDate - Start date
+ * @param endDate - End date
+ * @returns Number of business days
+ */
+function calculateBusinessDays(startDate: Date, endDate: Date): number {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  let businessDays = 0;
+  
+  const current = new Date(start);
+  while (current <= end) {
+    const dayOfWeek = current.getDay();
+    // Monday = 1, Tuesday = 2, ..., Friday = 5 (exclude Saturday = 6, Sunday = 0)
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      businessDays++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return businessDays;
+}
+
 interface CreateLeaveRequestRequest {
   employeeId: number;
   leaveTypeId: number;

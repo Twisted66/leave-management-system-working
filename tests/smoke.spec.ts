@@ -23,7 +23,7 @@ test.describe('Smoke Tests', () => {
     // Should have rendered content (React app should mount)
     const content = await page.locator('#root').textContent();
     expect(content).toBeTruthy();
-    expect(content!.length).toBeGreaterThan(10);
+    expect(content?.length ?? 0).toBeGreaterThan(10);
   });
 
   test('static files serve correctly', async ({ page }) => {
