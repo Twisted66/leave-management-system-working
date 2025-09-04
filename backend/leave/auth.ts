@@ -1,4 +1,4 @@
-import { api, APIError, Header } from "encore.dev/api";
+import { api, APIError, Header, Gateway } from "encore.dev/api";
 import { authHandler } from "encore.dev/auth";
 import { leaveDB } from "./db";
 import type { Employee } from "./types";
@@ -89,7 +89,7 @@ async function validateSupabaseToken(token: string): Promise<jwt.JwtPayload> {
   try {
     const decoded = jwt.verify(token, pem, {
       algorithms: ['RS256'],
-      issuer: `https://${SUPABASE_PROJECT_URL.split('//')[1]}`,
+      issuer: `${SUPABASE_PROJECT_URL}/auth/v1`,
       audience: 'authenticated',
     }) as jwt.JwtPayload;
 
@@ -116,17 +116,22 @@ export const authHandlerImpl = authHandler<AuthParams, AuthData>(
       console.log('❌ No authorization header');
       throw APIError.unauthenticated('No authorization header');
     }
+    console.log('Received Authorization header:', authHeader);
 
     const [scheme, token] = authHeader.split(' ');
+    console.log('Scheme:', scheme, 'Token present:', !!token);
     if (scheme.toLowerCase() !== 'bearer' || !token) {
       console.log('❌ Invalid auth format');
       throw APIError.invalidArgument('Invalid authorization header format');
     }
 
     try {
+      console.log('Attempting to validate token...');
       const decoded = await validateSupabaseToken(token);
+      console.log('Token validated. Decoded claims (sub, email):', decoded.sub, decoded.email);
       
       if (!decoded.sub || !decoded.email) {
+        console.log('❌ Invalid token: missing required claims (sub or email)');
         throw APIError.unauthenticated('Invalid token: missing claims');
       }
 
@@ -178,6 +183,11 @@ export const testAuth = api<void, { message: string, user: any }>(
     };
   }
 );
+
+// Configure API Gateway with auth handler
+export const gateway = new Gateway({
+  authHandler: authHandlerImpl,
+});
 
 // Simple login endpoint for Supabase (if needed for backend-only operations)
 interface LoginRequest {
