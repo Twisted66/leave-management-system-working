@@ -14,8 +14,9 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
-  mode: "development",
+  base: '/',
   build: {
-    minify: false,
+    outDir: 'dist',
+    sourcemap: true,
   }
 })
